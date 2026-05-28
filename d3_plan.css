@@ -97,20 +97,7 @@ body, html {
    VIEW MODES TRIGGERED BY CLASS
    ═══════════════════════════════════════════ */
 
-/* 1. DUAL SPLIT SCREEN MODE (50 / 50) */
-#split-container.mode-split #d3-panel {
-    flex: 1 1 50%;
-    max-width: 50%;
-    opacity: 1;
-    pointer-events: auto;
-}
-
-#split-container.mode-split #map-panel {
-    flex: 1 1 50%;
-    max-width: 50%;
-    opacity: 1;
-    pointer-events: auto;
-}
+/* 1. DUAL SPLIT SCREEN MODE (REMOVED) */
 
 /* 2. SITE PLAN ONLY MODE (100 / 0) */
 #split-container.mode-d3 #d3-panel {
@@ -494,9 +481,6 @@ body, html {
 }
 
 /* Adjust Legend position depending on layout mode for usability */
-#split-container.mode-split ~ #floating-legend {
-    left: 25%; /* align centered under the D3 plan split */
-}
 #split-container.mode-map ~ #floating-legend {
     left: 50%;
 }
@@ -699,5 +683,80 @@ body, html {
     }
     100% {
         filter: drop-shadow(0 0 10px rgba(var(--accent-gold-rgb), 0.55));
+    }
+}
+
+/* ═══════════════════════════════════════════
+   MOBILE RESPONSIVENESS
+   ═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+    /* Header optimizations */
+    #floating-header {
+        padding: 10px 14px;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        border-radius: var(--radius-md);
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .brand-sub, .header-stats {
+        display: none; /* Hide non-essential info to save space */
+    }
+
+    .brand-icon {
+        font-size: 1.4rem;
+    }
+
+    .brand h1 {
+        font-size: 1.1rem;
+    }
+
+    /* Controls repositioning */
+    #zoom-controls {
+        bottom: auto;
+        top: 80px;
+        left: 20px;
+        flex-direction: column;
+        transform: none;
+    }
+
+    #opacity-control {
+        bottom: auto;
+        top: 80px;
+        right: 20px;
+        padding: 10px 14px;
+    }
+
+    /* Bottom Sheet Detail Card */
+    #detail-card {
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        padding: 20px 20px 30px 20px;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+        transform: translateY(0); /* Normal state */
+    }
+
+    #detail-card.card-hidden {
+        transform: translateY(100%);
+    }
+
+    /* Floating Legend */
+    #floating-legend {
+        bottom: auto;
+        top: auto;
+        bottom: 12px;
+        padding: 8px 12px;
+        gap: 12px;
+        border-radius: var(--radius-sm);
+        z-index: 998;
+    }
+    
+    #split-container.mode-d3 ~ #floating-legend,
+    #split-container.mode-map ~ #floating-legend {
+        left: 50%;
     }
 }

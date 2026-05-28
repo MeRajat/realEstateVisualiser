@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fillOpacity: getPlotOpacity(d) * 1.2
             });
 
-            if (source !== 'leaflet') {
+            if (source !== 'leaflet' && document.getElementById('map-panel').offsetWidth > 0) {
                 map.fitBounds(mapTarget.getBounds(), {
                     padding: [80, 80],
                     maxZoom: 19,
@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Focuses map on a specific plot coordinates
     function focusPlotOnMap(plotId, animate = true) {
         const poly = leafletPolygons[plotId];
-        if (poly) {
+        if (poly && document.getElementById('map-panel').offsetWidth > 0) {
             map.fitBounds(poly.getBounds(), {
                 padding: [60, 60],
                 maxZoom: 19,
@@ -321,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto-fit the Leaflet map bounds to focus on the entire site boundary
     function fitMapToSiteBoundary() {
         const boundary = plotsData.find(d => d.id === 'SITE BOUNDARY');
-        if (boundary) {
+        if (boundary && document.getElementById('map-panel').offsetWidth > 0) {
             const bounds = toLatLngs(boundary.points);
             map.fitBounds(bounds, { padding: [40, 40], animate: true });
         }
