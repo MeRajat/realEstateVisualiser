@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Greater Mansarovar — Interactive GIS Dashboard</title>
+    <!-- Google Fonts: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <!-- Premium Stylesheet -->
+    <link rel="stylesheet" href="d3_plan.css">
+</head>
+<body>
+
+    <!-- Unified Split Container -->
+    <div id="split-container" class="mode-split">
+        <!-- D3 Site Plan Panel (Left) -->
+        <div id="d3-panel">
+            <div id="visualization"></div>
+            
+            <!-- Floating Zoom Controls for D3 Vector Plan -->
+            <div id="zoom-controls">
+                <button id="zoom-in" title="Zoom In">+</button>
+                <button id="zoom-reset" title="Reset View">⟲</button>
+                <button id="zoom-out" title="Zoom Out">−</button>
+            </div>
+        </div>
+
+        <!-- Real-World Satellite Map Panel (Right) -->
+        <div id="map-panel">
+            <div id="real-map"></div>
+            
+            <!-- Floating Opacity Slider overlaying Map -->
+            <div id="opacity-control">
+                <label for="opacity-slider">Overlay Opacity</label>
+                <input type="range" id="opacity-slider" min="0" max="100" value="70">
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Premium Header -->
+    <header id="floating-header">
+        <div class="brand">
+            <div class="brand-icon">◈</div>
+            <div>
+                <h1>The Greater Mansarovar</h1>
+                <span class="brand-sub">Interactive GIS Dashboard</span>
+            </div>
+        </div>
+
+        <!-- Segmented View Mode Toggle Controls -->
+        <div class="view-selector">
+            <button class="view-btn" data-mode="d3">Site Plan</button>
+            <button class="view-btn active" data-mode="split">Dual Split</button>
+            <button class="view-btn" data-mode="map">Satellite Map</button>
+        </div>
+
+        <div class="header-actions">
+            <div class="header-stats">
+                <div class="stat">
+                    <span class="stat-value" id="stat-total">0</span>
+                    <span class="stat-label">Total Plots</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="stat-available">0</span>
+                    <span class="stat-label">Available</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="stat-sold">0</span>
+                    <span class="stat-label">Sold</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Floating Beautiful Legend at the Bottom -->
+    <div id="floating-legend">
+        <div class="legend-item"><span class="legend-dot available"></span>Available</div>
+        <div class="legend-item"><span class="legend-dot sold"></span>Sold</div>
+        <div class="legend-item"><span class="legend-dot park"></span>Green Zone</div>
+        <div class="legend-item"><span class="legend-dot road"></span>Roads</div>
+    </div>
+
+    <!-- Floating Detail Card (initially hidden) -->
+    <div id="detail-card" class="card-hidden">
+        <button id="close-card">&times;</button>
+        <div class="card-badge" id="card-status-badge">Available</div>
+        <h2 id="card-plot-id">—</h2>
+        <div class="card-details">
+            <div class="card-row">
+                <span class="card-label">Area (sq.ft)</span>
+                <span class="card-value" id="card-area">—</span>
+            </div>
+            <div class="card-row">
+                <span class="card-label">Area (sq.yd)</span>
+                <span class="card-value" id="card-area-sqyd">—</span>
+            </div>
+            <div class="card-row">
+                <span class="card-label">Estimated Price</span>
+                <span class="card-value" id="card-price">—</span>
+            </div>
+            <div class="card-row">
+                <span class="card-label">Status</span>
+                <span class="card-value" id="card-status">—</span>
+            </div>
+        </div>
+        <a id="directions-btn" href="#" target="_blank">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+            Get Directions
+        </a>
+    </div>
+
+    <!-- D3.js, Leaflet and Dashboard Logic -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="d3_plan.js"></script>
+</body>
+</html>

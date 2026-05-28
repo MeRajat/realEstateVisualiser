@@ -1,0 +1,3790 @@
+[
+  {
+    "id": "SITE BOUNDARY",
+    "status": "Reserved",
+    "price": "-",
+    "area": "Common Area",
+    "points": [
+      [
+        60,
+        20
+      ],
+      [
+        120,
+        5
+      ],
+      [
+        200,
+        5
+      ],
+      [
+        320,
+        5
+      ],
+      [
+        450,
+        5
+      ],
+      [
+        580,
+        30
+      ],
+      [
+        620,
+        80
+      ],
+      [
+        640,
+        200
+      ],
+      [
+        640,
+        400
+      ],
+      [
+        650,
+        550
+      ],
+      [
+        640,
+        700
+      ],
+      [
+        620,
+        800
+      ],
+      [
+        580,
+        880
+      ],
+      [
+        450,
+        920
+      ],
+      [
+        350,
+        930
+      ],
+      [
+        200,
+        930
+      ],
+      [
+        100,
+        920
+      ],
+      [
+        50,
+        880
+      ],
+      [
+        30,
+        750
+      ],
+      [
+        20,
+        600
+      ],
+      [
+        15,
+        400
+      ],
+      [
+        20,
+        200
+      ],
+      [
+        30,
+        80
+      ]
+    ],
+    "isPark": true,
+    "isRoad": false
+  },
+  {
+    "id": "PHASE-1",
+    "status": "Reserved",
+    "price": "-",
+    "area": "Common Area",
+    "points": [
+      [
+        60,
+        20
+      ],
+      [
+        120,
+        5
+      ],
+      [
+        200,
+        5
+      ],
+      [
+        320,
+        5
+      ],
+      [
+        450,
+        5
+      ],
+      [
+        580,
+        30
+      ],
+      [
+        620,
+        80
+      ],
+      [
+        640,
+        200
+      ],
+      [
+        640,
+        280
+      ],
+      [
+        520,
+        280
+      ],
+      [
+        400,
+        280
+      ],
+      [
+        300,
+        280
+      ],
+      [
+        200,
+        270
+      ],
+      [
+        100,
+        260
+      ],
+      [
+        50,
+        240
+      ],
+      [
+        30,
+        160
+      ],
+      [
+        30,
+        80
+      ]
+    ],
+    "isPark": true,
+    "isRoad": false
+  },
+  {
+    "id": "OWNERS PLOT",
+    "status": "Reserved",
+    "price": "-",
+    "area": "Common Area",
+    "points": [
+      [
+        60,
+        20
+      ],
+      [
+        170,
+        10
+      ],
+      [
+        160,
+        120
+      ],
+      [
+        100,
+        160
+      ],
+      [
+        30,
+        130
+      ],
+      [
+        30,
+        80
+      ]
+    ],
+    "isPark": true,
+    "isRoad": false
+  },
+  {
+    "id": "7.5 MT ROAD",
+    "status": "Road",
+    "price": "-",
+    "area": "-",
+    "points": [
+      [
+        50,
+        280
+      ],
+      [
+        630,
+        280
+      ],
+      [
+        630,
+        292
+      ],
+      [
+        50,
+        292
+      ]
+    ],
+    "isPark": false,
+    "isRoad": true
+  },
+  {
+    "id": "7.5 MT ROAD",
+    "status": "Road",
+    "price": "-",
+    "area": "-",
+    "points": [
+      [
+        50,
+        390
+      ],
+      [
+        630,
+        390
+      ],
+      [
+        630,
+        402
+      ],
+      [
+        50,
+        402
+      ]
+    ],
+    "isPark": false,
+    "isRoad": true
+  },
+  {
+    "id": "7.5 MT ROAD",
+    "status": "Road",
+    "price": "-",
+    "area": "-",
+    "points": [
+      [
+        50,
+        500
+      ],
+      [
+        630,
+        500
+      ],
+      [
+        630,
+        512
+      ],
+      [
+        50,
+        512
+      ]
+    ],
+    "isPark": false,
+    "isRoad": true
+  },
+  {
+    "id": "9 MT ROAD",
+    "status": "Road",
+    "price": "-",
+    "area": "-",
+    "points": [
+      [
+        50.5,
+        610
+      ],
+      [
+        628.5,
+        610
+      ],
+      [
+        628.5,
+        622
+      ],
+      [
+        50.5,
+        622
+      ]
+    ],
+    "isPark": false,
+    "isRoad": true
+  },
+  {
+    "id": "7.5 MT ROAD",
+    "status": "Road",
+    "price": "-",
+    "area": "-",
+    "points": [
+      [
+        56,
+        720
+      ],
+      [
+        612,
+        720
+      ],
+      [
+        612,
+        732
+      ],
+      [
+        56,
+        732
+      ]
+    ],
+    "isPark": false,
+    "isRoad": true
+  },
+  {
+    "id": "7.5 MT ROAD",
+    "status": "Road",
+    "price": "-",
+    "area": "-",
+    "points": [
+      [
+        61.5,
+        830
+      ],
+      [
+        595.5,
+        830
+      ],
+      [
+        595.5,
+        842
+      ],
+      [
+        61.5,
+        842
+      ]
+    ],
+    "isPark": false,
+    "isRoad": true
+  },
+  {
+    "id": "9 MT ROAD",
+    "status": "Road",
+    "price": "-",
+    "area": "-",
+    "points": [
+      [
+        200,
+        280
+      ],
+      [
+        212,
+        280
+      ],
+      [
+        212,
+        842
+      ],
+      [
+        200,
+        842
+      ]
+    ],
+    "isPark": false,
+    "isRoad": true
+  },
+  {
+    "id": "9 MT ROAD",
+    "status": "Road",
+    "price": "-",
+    "area": "-",
+    "points": [
+      [
+        415,
+        280
+      ],
+      [
+        427,
+        280
+      ],
+      [
+        427,
+        842
+      ],
+      [
+        415,
+        842
+      ]
+    ],
+    "isPark": false,
+    "isRoad": true
+  },
+  {
+    "id": "12 MT ROAD",
+    "status": "Road",
+    "price": "-",
+    "area": "-",
+    "points": [
+      [
+        30,
+        200
+      ],
+      [
+        50,
+        200
+      ],
+      [
+        50,
+        900
+      ],
+      [
+        30,
+        900
+      ]
+    ],
+    "isPark": false,
+    "isRoad": true
+  },
+  {
+    "id": "147",
+    "status": "Available",
+    "price": "₹50 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        292
+      ],
+      [
+        126,
+        292
+      ],
+      [
+        126,
+        316.5
+      ],
+      [
+        52,
+        316.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "148",
+    "status": "Available",
+    "price": "₹60 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        292
+      ],
+      [
+        200,
+        292
+      ],
+      [
+        200,
+        316.5
+      ],
+      [
+        126,
+        316.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "149",
+    "status": "Sold",
+    "price": "₹83 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        316.5
+      ],
+      [
+        126,
+        316.5
+      ],
+      [
+        126,
+        341
+      ],
+      [
+        52,
+        341
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "150",
+    "status": "Available",
+    "price": "₹71 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        316.5
+      ],
+      [
+        200,
+        316.5
+      ],
+      [
+        200,
+        341
+      ],
+      [
+        126,
+        341
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "151",
+    "status": "Available",
+    "price": "₹42 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        341
+      ],
+      [
+        126,
+        341
+      ],
+      [
+        126,
+        365.5
+      ],
+      [
+        52,
+        365.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "152",
+    "status": "Available",
+    "price": "₹36 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        341
+      ],
+      [
+        200,
+        341
+      ],
+      [
+        200,
+        365.5
+      ],
+      [
+        126,
+        365.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "153",
+    "status": "Available",
+    "price": "₹64 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        365.5
+      ],
+      [
+        126,
+        365.5
+      ],
+      [
+        126,
+        390
+      ],
+      [
+        52,
+        390
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "154",
+    "status": "Sold",
+    "price": "₹67 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        365.5
+      ],
+      [
+        200,
+        365.5
+      ],
+      [
+        200,
+        390
+      ],
+      [
+        126,
+        390
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "155",
+    "status": "Available",
+    "price": "₹73 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        402
+      ],
+      [
+        126,
+        402
+      ],
+      [
+        126,
+        426.5
+      ],
+      [
+        52,
+        426.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "156",
+    "status": "Available",
+    "price": "₹68 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        402
+      ],
+      [
+        200,
+        402
+      ],
+      [
+        200,
+        426.5
+      ],
+      [
+        126,
+        426.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "157",
+    "status": "Available",
+    "price": "₹77 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        426.5
+      ],
+      [
+        126,
+        426.5
+      ],
+      [
+        126,
+        451
+      ],
+      [
+        52,
+        451
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "158",
+    "status": "Available",
+    "price": "₹49 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        426.5
+      ],
+      [
+        200,
+        426.5
+      ],
+      [
+        200,
+        451
+      ],
+      [
+        126,
+        451
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "159",
+    "status": "Available",
+    "price": "₹73 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        451
+      ],
+      [
+        126,
+        451
+      ],
+      [
+        126,
+        475.5
+      ],
+      [
+        52,
+        475.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "160",
+    "status": "Available",
+    "price": "₹44 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        451
+      ],
+      [
+        200,
+        451
+      ],
+      [
+        200,
+        475.5
+      ],
+      [
+        126,
+        475.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "161",
+    "status": "Available",
+    "price": "₹38 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        475.5
+      ],
+      [
+        126,
+        475.5
+      ],
+      [
+        126,
+        500
+      ],
+      [
+        52,
+        500
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "162",
+    "status": "Available",
+    "price": "₹74 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        475.5
+      ],
+      [
+        200,
+        475.5
+      ],
+      [
+        200,
+        500
+      ],
+      [
+        126,
+        500
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "163",
+    "status": "Available",
+    "price": "₹44 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        512
+      ],
+      [
+        126,
+        512
+      ],
+      [
+        126,
+        536.5
+      ],
+      [
+        52,
+        536.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "164",
+    "status": "Available",
+    "price": "₹46 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        512
+      ],
+      [
+        200,
+        512
+      ],
+      [
+        200,
+        536.5
+      ],
+      [
+        126,
+        536.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "165",
+    "status": "Available",
+    "price": "₹55 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        536.5
+      ],
+      [
+        126,
+        536.5
+      ],
+      [
+        126,
+        561
+      ],
+      [
+        52,
+        561
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "166",
+    "status": "Sold",
+    "price": "₹70 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        536.5
+      ],
+      [
+        200,
+        536.5
+      ],
+      [
+        200,
+        561
+      ],
+      [
+        126,
+        561
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "167",
+    "status": "Available",
+    "price": "₹64 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        561
+      ],
+      [
+        126,
+        561
+      ],
+      [
+        126,
+        585.5
+      ],
+      [
+        52,
+        585.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "168",
+    "status": "Available",
+    "price": "₹69 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        561
+      ],
+      [
+        200,
+        561
+      ],
+      [
+        200,
+        585.5
+      ],
+      [
+        126,
+        585.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "169",
+    "status": "Sold",
+    "price": "₹66 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        585.5
+      ],
+      [
+        126,
+        585.5
+      ],
+      [
+        126,
+        610
+      ],
+      [
+        52,
+        610
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "170",
+    "status": "Available",
+    "price": "₹49 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        585.5
+      ],
+      [
+        200,
+        585.5
+      ],
+      [
+        200,
+        610
+      ],
+      [
+        126,
+        610
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "171",
+    "status": "Available",
+    "price": "₹73 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        622
+      ],
+      [
+        126,
+        622
+      ],
+      [
+        126,
+        646.5
+      ],
+      [
+        52,
+        646.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "172",
+    "status": "Sold",
+    "price": "₹70 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        622
+      ],
+      [
+        200,
+        622
+      ],
+      [
+        200,
+        646.5
+      ],
+      [
+        126,
+        646.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "173",
+    "status": "Available",
+    "price": "₹74 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        646.5
+      ],
+      [
+        126,
+        646.5
+      ],
+      [
+        126,
+        671
+      ],
+      [
+        52,
+        671
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "174",
+    "status": "Available",
+    "price": "₹40 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        646.5
+      ],
+      [
+        200,
+        646.5
+      ],
+      [
+        200,
+        671
+      ],
+      [
+        126,
+        671
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "175",
+    "status": "Available",
+    "price": "₹55 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        671
+      ],
+      [
+        126,
+        671
+      ],
+      [
+        126,
+        695.5
+      ],
+      [
+        52,
+        695.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "176",
+    "status": "Sold",
+    "price": "₹37 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        671
+      ],
+      [
+        200,
+        671
+      ],
+      [
+        200,
+        695.5
+      ],
+      [
+        126,
+        695.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "177",
+    "status": "Available",
+    "price": "₹76 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        695.5
+      ],
+      [
+        126,
+        695.5
+      ],
+      [
+        126,
+        720
+      ],
+      [
+        52,
+        720
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "178",
+    "status": "Available",
+    "price": "₹79 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        695.5
+      ],
+      [
+        200,
+        695.5
+      ],
+      [
+        200,
+        720
+      ],
+      [
+        126,
+        720
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "179",
+    "status": "Available",
+    "price": "₹64 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        732
+      ],
+      [
+        126,
+        732
+      ],
+      [
+        126,
+        756.5
+      ],
+      [
+        52,
+        756.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "180",
+    "status": "Available",
+    "price": "₹60 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        732
+      ],
+      [
+        200,
+        732
+      ],
+      [
+        200,
+        756.5
+      ],
+      [
+        126,
+        756.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "181",
+    "status": "Available",
+    "price": "₹53 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        756.5
+      ],
+      [
+        126,
+        756.5
+      ],
+      [
+        126,
+        781
+      ],
+      [
+        52,
+        781
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "182",
+    "status": "Available",
+    "price": "₹79 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        756.5
+      ],
+      [
+        200,
+        756.5
+      ],
+      [
+        200,
+        781
+      ],
+      [
+        126,
+        781
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "183",
+    "status": "Sold",
+    "price": "₹58 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        781
+      ],
+      [
+        126,
+        781
+      ],
+      [
+        126,
+        805.5
+      ],
+      [
+        52,
+        805.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "184",
+    "status": "Available",
+    "price": "₹55 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        781
+      ],
+      [
+        200,
+        781
+      ],
+      [
+        200,
+        805.5
+      ],
+      [
+        126,
+        805.5
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "185",
+    "status": "Sold",
+    "price": "₹82 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        52,
+        805.5
+      ],
+      [
+        126,
+        805.5
+      ],
+      [
+        126,
+        830
+      ],
+      [
+        52,
+        830
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "186",
+    "status": "Available",
+    "price": "₹66 Lakhs",
+    "area": "1813 sq.ft",
+    "points": [
+      [
+        126,
+        805.5
+      ],
+      [
+        200,
+        805.5
+      ],
+      [
+        200,
+        830
+      ],
+      [
+        126,
+        830
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "59",
+    "status": "Available",
+    "price": "₹64 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        214,
+        292
+      ],
+      [
+        253.8,
+        292
+      ],
+      [
+        253.8,
+        341
+      ],
+      [
+        214,
+        341
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "60",
+    "status": "Sold",
+    "price": "₹78 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        253.8,
+        292
+      ],
+      [
+        293.6,
+        292
+      ],
+      [
+        293.6,
+        341
+      ],
+      [
+        253.8,
+        341
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "61",
+    "status": "Available",
+    "price": "₹68 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        293.6,
+        292
+      ],
+      [
+        333.4,
+        292
+      ],
+      [
+        333.4,
+        341
+      ],
+      [
+        293.6,
+        341
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "62",
+    "status": "Available",
+    "price": "₹81 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        333.4,
+        292
+      ],
+      [
+        373.2,
+        292
+      ],
+      [
+        373.2,
+        341
+      ],
+      [
+        333.4,
+        341
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "63",
+    "status": "Available",
+    "price": "₹68 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        373.2,
+        292
+      ],
+      [
+        413,
+        292
+      ],
+      [
+        413,
+        341
+      ],
+      [
+        373.2,
+        341
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "64",
+    "status": "Available",
+    "price": "₹65 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        214,
+        341
+      ],
+      [
+        253.8,
+        341
+      ],
+      [
+        253.8,
+        390
+      ],
+      [
+        214,
+        390
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "65",
+    "status": "Available",
+    "price": "₹38 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        253.8,
+        341
+      ],
+      [
+        293.6,
+        341
+      ],
+      [
+        293.6,
+        390
+      ],
+      [
+        253.8,
+        390
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "66",
+    "status": "Available",
+    "price": "₹57 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        293.6,
+        341
+      ],
+      [
+        333.4,
+        341
+      ],
+      [
+        333.4,
+        390
+      ],
+      [
+        293.6,
+        390
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "67",
+    "status": "Available",
+    "price": "₹63 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        333.4,
+        341
+      ],
+      [
+        373.2,
+        341
+      ],
+      [
+        373.2,
+        390
+      ],
+      [
+        333.4,
+        390
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "68",
+    "status": "Available",
+    "price": "₹71 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        373.2,
+        341
+      ],
+      [
+        413,
+        341
+      ],
+      [
+        413,
+        390
+      ],
+      [
+        373.2,
+        390
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "69",
+    "status": "Available",
+    "price": "₹52 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        214,
+        402
+      ],
+      [
+        253.8,
+        402
+      ],
+      [
+        253.8,
+        451
+      ],
+      [
+        214,
+        451
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "70",
+    "status": "Available",
+    "price": "₹39 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        253.8,
+        402
+      ],
+      [
+        293.6,
+        402
+      ],
+      [
+        293.6,
+        451
+      ],
+      [
+        253.8,
+        451
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "71",
+    "status": "Sold",
+    "price": "₹53 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        293.6,
+        402
+      ],
+      [
+        333.4,
+        402
+      ],
+      [
+        333.4,
+        451
+      ],
+      [
+        293.6,
+        451
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "72",
+    "status": "Available",
+    "price": "₹41 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        333.4,
+        402
+      ],
+      [
+        373.2,
+        402
+      ],
+      [
+        373.2,
+        451
+      ],
+      [
+        333.4,
+        451
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "73",
+    "status": "Sold",
+    "price": "₹66 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        373.2,
+        402
+      ],
+      [
+        413,
+        402
+      ],
+      [
+        413,
+        451
+      ],
+      [
+        373.2,
+        451
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "74",
+    "status": "Available",
+    "price": "₹64 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        214,
+        451
+      ],
+      [
+        253.8,
+        451
+      ],
+      [
+        253.8,
+        500
+      ],
+      [
+        214,
+        500
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "75",
+    "status": "Available",
+    "price": "₹82 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        253.8,
+        451
+      ],
+      [
+        293.6,
+        451
+      ],
+      [
+        293.6,
+        500
+      ],
+      [
+        253.8,
+        500
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "76",
+    "status": "Available",
+    "price": "₹50 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        293.6,
+        451
+      ],
+      [
+        333.4,
+        451
+      ],
+      [
+        333.4,
+        500
+      ],
+      [
+        293.6,
+        500
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "77",
+    "status": "Available",
+    "price": "₹62 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        333.4,
+        451
+      ],
+      [
+        373.2,
+        451
+      ],
+      [
+        373.2,
+        500
+      ],
+      [
+        333.4,
+        500
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "78",
+    "status": "Available",
+    "price": "₹40 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        373.2,
+        451
+      ],
+      [
+        413,
+        451
+      ],
+      [
+        413,
+        500
+      ],
+      [
+        373.2,
+        500
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "79",
+    "status": "Available",
+    "price": "₹64 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        214,
+        512
+      ],
+      [
+        253.8,
+        512
+      ],
+      [
+        253.8,
+        561
+      ],
+      [
+        214,
+        561
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "80",
+    "status": "Sold",
+    "price": "₹59 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        253.8,
+        512
+      ],
+      [
+        293.6,
+        512
+      ],
+      [
+        293.6,
+        561
+      ],
+      [
+        253.8,
+        561
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "81",
+    "status": "Available",
+    "price": "₹64 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        293.6,
+        512
+      ],
+      [
+        333.4,
+        512
+      ],
+      [
+        333.4,
+        561
+      ],
+      [
+        293.6,
+        561
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "82",
+    "status": "Available",
+    "price": "₹46 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        333.4,
+        512
+      ],
+      [
+        373.2,
+        512
+      ],
+      [
+        373.2,
+        561
+      ],
+      [
+        333.4,
+        561
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "83",
+    "status": "Available",
+    "price": "₹40 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        373.2,
+        512
+      ],
+      [
+        413,
+        512
+      ],
+      [
+        413,
+        561
+      ],
+      [
+        373.2,
+        561
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "84",
+    "status": "Available",
+    "price": "₹74 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        214,
+        561
+      ],
+      [
+        253.8,
+        561
+      ],
+      [
+        253.8,
+        610
+      ],
+      [
+        214,
+        610
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "85",
+    "status": "Available",
+    "price": "₹83 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        253.8,
+        561
+      ],
+      [
+        293.6,
+        561
+      ],
+      [
+        293.6,
+        610
+      ],
+      [
+        253.8,
+        610
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "86",
+    "status": "Sold",
+    "price": "₹62 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        293.6,
+        561
+      ],
+      [
+        333.4,
+        561
+      ],
+      [
+        333.4,
+        610
+      ],
+      [
+        293.6,
+        610
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "87",
+    "status": "Available",
+    "price": "₹43 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        333.4,
+        561
+      ],
+      [
+        373.2,
+        561
+      ],
+      [
+        373.2,
+        610
+      ],
+      [
+        333.4,
+        610
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "88",
+    "status": "Available",
+    "price": "₹64 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        373.2,
+        561
+      ],
+      [
+        413,
+        561
+      ],
+      [
+        413,
+        610
+      ],
+      [
+        373.2,
+        610
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "89",
+    "status": "Available",
+    "price": "₹65 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        214,
+        622
+      ],
+      [
+        253.8,
+        622
+      ],
+      [
+        253.8,
+        671
+      ],
+      [
+        214,
+        671
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "90",
+    "status": "Sold",
+    "price": "₹62 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        253.8,
+        622
+      ],
+      [
+        293.6,
+        622
+      ],
+      [
+        293.6,
+        671
+      ],
+      [
+        253.8,
+        671
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "91",
+    "status": "Available",
+    "price": "₹74 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        293.6,
+        622
+      ],
+      [
+        333.4,
+        622
+      ],
+      [
+        333.4,
+        671
+      ],
+      [
+        293.6,
+        671
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "92",
+    "status": "Available",
+    "price": "₹38 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        333.4,
+        622
+      ],
+      [
+        373.2,
+        622
+      ],
+      [
+        373.2,
+        671
+      ],
+      [
+        333.4,
+        671
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "93",
+    "status": "Sold",
+    "price": "₹57 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        373.2,
+        622
+      ],
+      [
+        413,
+        622
+      ],
+      [
+        413,
+        671
+      ],
+      [
+        373.2,
+        671
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "94",
+    "status": "Available",
+    "price": "₹65 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        214,
+        671
+      ],
+      [
+        253.8,
+        671
+      ],
+      [
+        253.8,
+        720
+      ],
+      [
+        214,
+        720
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "95",
+    "status": "Available",
+    "price": "₹57 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        253.8,
+        671
+      ],
+      [
+        293.6,
+        671
+      ],
+      [
+        293.6,
+        720
+      ],
+      [
+        253.8,
+        720
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "96",
+    "status": "Available",
+    "price": "₹41 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        293.6,
+        671
+      ],
+      [
+        333.4,
+        671
+      ],
+      [
+        333.4,
+        720
+      ],
+      [
+        293.6,
+        720
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "97",
+    "status": "Sold",
+    "price": "₹48 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        333.4,
+        671
+      ],
+      [
+        373.2,
+        671
+      ],
+      [
+        373.2,
+        720
+      ],
+      [
+        333.4,
+        720
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "98",
+    "status": "Sold",
+    "price": "₹55 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        373.2,
+        671
+      ],
+      [
+        413,
+        671
+      ],
+      [
+        413,
+        720
+      ],
+      [
+        373.2,
+        720
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "99",
+    "status": "Available",
+    "price": "₹53 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        214,
+        732
+      ],
+      [
+        253.8,
+        732
+      ],
+      [
+        253.8,
+        781
+      ],
+      [
+        214,
+        781
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "100",
+    "status": "Sold",
+    "price": "₹36 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        253.8,
+        732
+      ],
+      [
+        293.6,
+        732
+      ],
+      [
+        293.6,
+        781
+      ],
+      [
+        253.8,
+        781
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "101",
+    "status": "Available",
+    "price": "₹72 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        293.6,
+        732
+      ],
+      [
+        333.4,
+        732
+      ],
+      [
+        333.4,
+        781
+      ],
+      [
+        293.6,
+        781
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "102",
+    "status": "Available",
+    "price": "₹64 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        333.4,
+        732
+      ],
+      [
+        373.2,
+        732
+      ],
+      [
+        373.2,
+        781
+      ],
+      [
+        333.4,
+        781
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "103",
+    "status": "Available",
+    "price": "₹35 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        373.2,
+        732
+      ],
+      [
+        413,
+        732
+      ],
+      [
+        413,
+        781
+      ],
+      [
+        373.2,
+        781
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "104",
+    "status": "Sold",
+    "price": "₹67 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        214,
+        781
+      ],
+      [
+        253.8,
+        781
+      ],
+      [
+        253.8,
+        830
+      ],
+      [
+        214,
+        830
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "105",
+    "status": "Available",
+    "price": "₹60 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        253.8,
+        781
+      ],
+      [
+        293.6,
+        781
+      ],
+      [
+        293.6,
+        830
+      ],
+      [
+        253.8,
+        830
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "106",
+    "status": "Available",
+    "price": "₹38 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        293.6,
+        781
+      ],
+      [
+        333.4,
+        781
+      ],
+      [
+        333.4,
+        830
+      ],
+      [
+        293.6,
+        830
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "107",
+    "status": "Available",
+    "price": "₹45 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        333.4,
+        781
+      ],
+      [
+        373.2,
+        781
+      ],
+      [
+        373.2,
+        830
+      ],
+      [
+        333.4,
+        830
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "108",
+    "status": "Available",
+    "price": "₹69 Lakhs",
+    "area": "1950 sq.ft",
+    "points": [
+      [
+        373.2,
+        781
+      ],
+      [
+        413,
+        781
+      ],
+      [
+        413,
+        830
+      ],
+      [
+        373.2,
+        830
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "200",
+    "status": "Available",
+    "price": "₹65 Lakhs",
+    "area": "2340 sq.ft",
+    "points": [
+      [
+        429,
+        292
+      ],
+      [
+        476.75,
+        292
+      ],
+      [
+        476.75,
+        341
+      ],
+      [
+        429,
+        341
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "201",
+    "status": "Sold",
+    "price": "₹81 Lakhs",
+    "area": "2340 sq.ft",
+    "points": [
+      [
+        476.75,
+        292
+      ],
+      [
+        524.5,
+        292
+      ],
+      [
+        524.5,
+        341
+      ],
+      [
+        476.75,
+        341
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "202",
+    "status": "Available",
+    "price": "₹43 Lakhs",
+    "area": "2340 sq.ft",
+    "points": [
+      [
+        524.5,
+        292
+      ],
+      [
+        572.25,
+        292
+      ],
+      [
+        572.25,
+        341
+      ],
+      [
+        524.5,
+        341
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "203",
+    "status": "Available",
+    "price": "₹50 Lakhs",
+    "area": "2340 sq.ft",
+    "points": [
+      [
+        572.25,
+        292
+      ],
+      [
+        620,
+        292
+      ],
+      [
+        620,
+        341
+      ],
+      [
+        572.25,
+        341
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "204",
+    "status": "Available",
+    "price": "₹38 Lakhs",
+    "area": "2340 sq.ft",
+    "points": [
+      [
+        429,
+        341
+      ],
+      [
+        476.75,
+        341
+      ],
+      [
+        476.75,
+        390
+      ],
+      [
+        429,
+        390
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "205",
+    "status": "Sold",
+    "price": "₹51 Lakhs",
+    "area": "2340 sq.ft",
+    "points": [
+      [
+        476.75,
+        341
+      ],
+      [
+        524.5,
+        341
+      ],
+      [
+        524.5,
+        390
+      ],
+      [
+        476.75,
+        390
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "206",
+    "status": "Available",
+    "price": "₹42 Lakhs",
+    "area": "2340 sq.ft",
+    "points": [
+      [
+        524.5,
+        341
+      ],
+      [
+        572.25,
+        341
+      ],
+      [
+        572.25,
+        390
+      ],
+      [
+        524.5,
+        390
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "207",
+    "status": "Available",
+    "price": "₹70 Lakhs",
+    "area": "2340 sq.ft",
+    "points": [
+      [
+        572.25,
+        341
+      ],
+      [
+        620,
+        341
+      ],
+      [
+        620,
+        390
+      ],
+      [
+        572.25,
+        390
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "208",
+    "status": "Available",
+    "price": "₹48 Lakhs",
+    "area": "2156 sq.ft",
+    "points": [
+      [
+        429,
+        402
+      ],
+      [
+        473,
+        402
+      ],
+      [
+        473,
+        451
+      ],
+      [
+        429,
+        451
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "209",
+    "status": "Available",
+    "price": "₹74 Lakhs",
+    "area": "2156 sq.ft",
+    "points": [
+      [
+        473,
+        402
+      ],
+      [
+        517,
+        402
+      ],
+      [
+        517,
+        451
+      ],
+      [
+        473,
+        451
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "210",
+    "status": "Sold",
+    "price": "₹79 Lakhs",
+    "area": "2156 sq.ft",
+    "points": [
+      [
+        517,
+        402
+      ],
+      [
+        561,
+        402
+      ],
+      [
+        561,
+        451
+      ],
+      [
+        517,
+        451
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "211",
+    "status": "Sold",
+    "price": "₹37 Lakhs",
+    "area": "2156 sq.ft",
+    "points": [
+      [
+        561,
+        402
+      ],
+      [
+        605,
+        402
+      ],
+      [
+        605,
+        451
+      ],
+      [
+        561,
+        451
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "212",
+    "status": "Sold",
+    "price": "₹36 Lakhs",
+    "area": "2156 sq.ft",
+    "points": [
+      [
+        429,
+        451
+      ],
+      [
+        473,
+        451
+      ],
+      [
+        473,
+        500
+      ],
+      [
+        429,
+        500
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "213",
+    "status": "Available",
+    "price": "₹50 Lakhs",
+    "area": "2156 sq.ft",
+    "points": [
+      [
+        473,
+        451
+      ],
+      [
+        517,
+        451
+      ],
+      [
+        517,
+        500
+      ],
+      [
+        473,
+        500
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "214",
+    "status": "Available",
+    "price": "₹64 Lakhs",
+    "area": "2156 sq.ft",
+    "points": [
+      [
+        517,
+        451
+      ],
+      [
+        561,
+        451
+      ],
+      [
+        561,
+        500
+      ],
+      [
+        517,
+        500
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "215",
+    "status": "Available",
+    "price": "₹82 Lakhs",
+    "area": "2156 sq.ft",
+    "points": [
+      [
+        561,
+        451
+      ],
+      [
+        605,
+        451
+      ],
+      [
+        605,
+        500
+      ],
+      [
+        561,
+        500
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "216",
+    "status": "Sold",
+    "price": "₹43 Lakhs",
+    "area": "1972 sq.ft",
+    "points": [
+      [
+        429,
+        512
+      ],
+      [
+        469.25,
+        512
+      ],
+      [
+        469.25,
+        561
+      ],
+      [
+        429,
+        561
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "217",
+    "status": "Available",
+    "price": "₹80 Lakhs",
+    "area": "1972 sq.ft",
+    "points": [
+      [
+        469.25,
+        512
+      ],
+      [
+        509.5,
+        512
+      ],
+      [
+        509.5,
+        561
+      ],
+      [
+        469.25,
+        561
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "218",
+    "status": "Available",
+    "price": "₹55 Lakhs",
+    "area": "1972 sq.ft",
+    "points": [
+      [
+        509.5,
+        512
+      ],
+      [
+        549.75,
+        512
+      ],
+      [
+        549.75,
+        561
+      ],
+      [
+        509.5,
+        561
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "219",
+    "status": "Available",
+    "price": "₹76 Lakhs",
+    "area": "1727 sq.ft",
+    "points": [
+      [
+        549.75,
+        512
+      ],
+      [
+        590,
+        512
+      ],
+      [
+        580,
+        561
+      ],
+      [
+        549.75,
+        561
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "220",
+    "status": "Sold",
+    "price": "₹41 Lakhs",
+    "area": "1972 sq.ft",
+    "points": [
+      [
+        429,
+        561
+      ],
+      [
+        469.25,
+        561
+      ],
+      [
+        469.25,
+        610
+      ],
+      [
+        429,
+        610
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "221",
+    "status": "Sold",
+    "price": "₹60 Lakhs",
+    "area": "1972 sq.ft",
+    "points": [
+      [
+        469.25,
+        561
+      ],
+      [
+        509.5,
+        561
+      ],
+      [
+        509.5,
+        610
+      ],
+      [
+        469.25,
+        610
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "222",
+    "status": "Available",
+    "price": "₹43 Lakhs",
+    "area": "1972 sq.ft",
+    "points": [
+      [
+        509.5,
+        561
+      ],
+      [
+        549.75,
+        561
+      ],
+      [
+        549.75,
+        610
+      ],
+      [
+        509.5,
+        610
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "223",
+    "status": "Available",
+    "price": "₹49 Lakhs",
+    "area": "1727 sq.ft",
+    "points": [
+      [
+        549.75,
+        561
+      ],
+      [
+        590,
+        561
+      ],
+      [
+        580,
+        610
+      ],
+      [
+        549.75,
+        610
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "224",
+    "status": "Sold",
+    "price": "₹73 Lakhs",
+    "area": "1788 sq.ft",
+    "points": [
+      [
+        429,
+        622
+      ],
+      [
+        465.5,
+        622
+      ],
+      [
+        465.5,
+        671
+      ],
+      [
+        429,
+        671
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "225",
+    "status": "Available",
+    "price": "₹69 Lakhs",
+    "area": "1788 sq.ft",
+    "points": [
+      [
+        465.5,
+        622
+      ],
+      [
+        502,
+        622
+      ],
+      [
+        502,
+        671
+      ],
+      [
+        465.5,
+        671
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "226",
+    "status": "Sold",
+    "price": "₹82 Lakhs",
+    "area": "1788 sq.ft",
+    "points": [
+      [
+        502,
+        622
+      ],
+      [
+        538.5,
+        622
+      ],
+      [
+        538.5,
+        671
+      ],
+      [
+        502,
+        671
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "227",
+    "status": "Available",
+    "price": "₹42 Lakhs",
+    "area": "1543 sq.ft",
+    "points": [
+      [
+        538.5,
+        622
+      ],
+      [
+        575,
+        622
+      ],
+      [
+        565,
+        671
+      ],
+      [
+        538.5,
+        671
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "228",
+    "status": "Available",
+    "price": "₹42 Lakhs",
+    "area": "1788 sq.ft",
+    "points": [
+      [
+        429,
+        671
+      ],
+      [
+        465.5,
+        671
+      ],
+      [
+        465.5,
+        720
+      ],
+      [
+        429,
+        720
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "229",
+    "status": "Sold",
+    "price": "₹57 Lakhs",
+    "area": "1788 sq.ft",
+    "points": [
+      [
+        465.5,
+        671
+      ],
+      [
+        502,
+        671
+      ],
+      [
+        502,
+        720
+      ],
+      [
+        465.5,
+        720
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "230",
+    "status": "Available",
+    "price": "₹69 Lakhs",
+    "area": "1788 sq.ft",
+    "points": [
+      [
+        502,
+        671
+      ],
+      [
+        538.5,
+        671
+      ],
+      [
+        538.5,
+        720
+      ],
+      [
+        502,
+        720
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "231",
+    "status": "Available",
+    "price": "₹55 Lakhs",
+    "area": "1543 sq.ft",
+    "points": [
+      [
+        538.5,
+        671
+      ],
+      [
+        575,
+        671
+      ],
+      [
+        565,
+        720
+      ],
+      [
+        538.5,
+        720
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "180",
+    "status": "Available",
+    "price": "₹79 Lakhs",
+    "area": "4592 sq.ft",
+    "points": [
+      [
+        52,
+        842
+      ],
+      [
+        130,
+        842
+      ],
+      [
+        130,
+        890
+      ],
+      [
+        80,
+        910
+      ],
+      [
+        50,
+        890
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "181",
+    "status": "Available",
+    "price": "₹48 Lakhs",
+    "area": "3710 sq.ft",
+    "points": [
+      [
+        130,
+        842
+      ],
+      [
+        200,
+        842
+      ],
+      [
+        200,
+        900
+      ],
+      [
+        130,
+        890
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "182",
+    "status": "Available",
+    "price": "₹69 Lakhs",
+    "area": "7258 sq.ft",
+    "points": [
+      [
+        214,
+        842
+      ],
+      [
+        320,
+        842
+      ],
+      [
+        340,
+        910
+      ],
+      [
+        214,
+        900
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "183",
+    "status": "Available",
+    "price": "₹78 Lakhs",
+    "area": "5270 sq.ft",
+    "points": [
+      [
+        320,
+        842
+      ],
+      [
+        415,
+        842
+      ],
+      [
+        400,
+        910
+      ],
+      [
+        340,
+        910
+      ]
+    ],
+    "isPark": false,
+    "isRoad": false
+  },
+  {
+    "id": "COMMON PLOT",
+    "status": "Reserved",
+    "price": "-",
+    "area": "Common Area",
+    "points": [
+      [
+        429,
+        720
+      ],
+      [
+        580,
+        720
+      ],
+      [
+        580,
+        880
+      ],
+      [
+        500,
+        920
+      ],
+      [
+        429,
+        842
+      ]
+    ],
+    "isPark": true,
+    "isRoad": false
+  },
+  {
+    "id": "AMENITIES",
+    "status": "Reserved",
+    "price": "-",
+    "area": "Common Area",
+    "points": [
+      [
+        620,
+        280
+      ],
+      [
+        640,
+        280
+      ],
+      [
+        650,
+        420
+      ],
+      [
+        640,
+        500
+      ],
+      [
+        620,
+        500
+      ]
+    ],
+    "isPark": true,
+    "isRoad": false
+  }
+]
