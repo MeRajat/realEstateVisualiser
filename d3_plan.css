@@ -572,6 +572,17 @@ body, html {
     text-transform: uppercase;
 }
 
+.plot-label-road {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 9px;
+    fill: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    letter-spacing: 1px;
+}
+
 /* Floating D3 Tooltip */
 .d3-tooltip {
     position: absolute;
@@ -667,6 +678,18 @@ body, html {
 
 .custom-tooltip::before {
     border-top-color: var(--bg-panel) !important;
+}
+
+.leaflet-road-label {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    text-shadow: 0 0 4px #000 !important;
+    pointer-events: none !important;
 }
 
 /* Interactive Leaflet road vector class */

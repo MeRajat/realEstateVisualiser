@@ -376,10 +376,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Text plot labels centered at centroids
         g.selectAll('.plot-label')
-            .data(data.filter(d => !d.isRoad && d.id !== 'SITE BOUNDARY'))
+            .data(data.filter(d => d.id !== 'SITE BOUNDARY'))
             .enter()
             .append('text')
-            .attr('class', d => d.isPark ? 'plot-label-park' : 'plot-label')
+            .attr('class', d => {
+                if (d.isRoad) return 'plot-label-road';
+                if (d.isPark) return 'plot-label-park';
+                return 'plot-label';
+            })
             .attr('x', d => {
                 const sx = d.points.reduce((s, p) => s + p[0], 0);
                 return sx / d.points.length;
@@ -429,8 +433,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // Save reference to bi-directional mapper
             leafletPolygons[d.id] = poly;
 
-            // Skip interaction listeners for roads and boundary
-            if (d.isRoad || isBoundary) return;
+            if (d.isRoad) {
+                poly.bindTooltip(d.id, {
+                    permanent: true,
+                    direction: 'center',
+                    className: 'leaflet-road-label'
+                });
+                return;
+            }
+
+            // Skip interaction listeners for boundary
+            if (isBoundary) return;
 
             // Premium sticky Leaflet map tooltip
             poly.bindTooltip(`<strong>${d.isPark ? d.id : 'Plot ' + d.id}</strong><br>${d.area}`, {
