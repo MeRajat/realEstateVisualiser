@@ -1,0 +1,23 @@
+{
+  "name": "real-estate-visualiser",
+  "version": "1.0.0",
+  "description": "Interactive GIS Dashboard for The Greater Mansarovar real estate visualization",
+  "main": "d3_plan.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MeRajat/realEstateVisualiser.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MeRajat/realEstateVisualiser/issues"
+  },
+  "homepage": "https://github.com/MeRajat/realEstateVisualiser#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
