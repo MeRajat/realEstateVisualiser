@@ -234,19 +234,40 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('card-status-badge').className = 'card-badge ' + badgeClass;
         document.getElementById('card-plot-id').textContent = d.isPark ? d.id : 'Plot ' + d.id;
         document.getElementById('card-status').textContent = d.status;
-        
-        // Render values
+
+        // Render area value
         document.getElementById('card-area').textContent = d.area;
         document.getElementById('card-price').textContent = d.price;
 
-        // Math: area in sq yards = sq ft / 9
+        // Compute dimensions from bounding box of points
+        // Scale: 1 data unit = 0.6 metres = ~1.9685 feet
+        const METERS_PER_DATA_UNIT = 0.6;
+        const FEET_PER_METER = 3.28084;
+        const FT_PER_UNIT = METERS_PER_DATA_UNIT * FEET_PER_METER; // ≈ 1.9685
+
+        const dimRow = document.getElementById('row-dimensions');
+        if (!d.isPark && !d.isRoad) {
+            const xs = d.points.map(p => p[0]);
+            const ys = d.points.map(p => p[1]);
+            const wUnits = Math.max(...xs) - Math.min(...xs);
+            const hUnits = Math.max(...ys) - Math.min(...ys);
+            const wFt = Math.round(wUnits * FT_PER_UNIT * 10) / 10;
+            const hFt = Math.round(hUnits * FT_PER_UNIT * 10) / 10;
+            document.getElementById('card-dimensions').textContent = `${wFt} ft × ${hFt} ft`;
+            dimRow.style.display = 'flex';
+        } else {
+            dimRow.style.display = 'none';
+        }
+
+        // Area in Gaj (sq. yards): 1 sq.yd = 9 sq.ft
+        const sqydRow = document.getElementById('row-sqyd');
         if (!d.isPark && d.area.includes('sq.ft')) {
             const sqftVal = parseFloat(d.area.replace(/[^\d.]/g, ''));
-            const sqydVal = Math.round((sqftVal / 9) * 10) / 10;
-            document.getElementById('card-area-sqyd').textContent = sqydVal + " sq.yd";
-            document.getElementById('card-area-sqyd').parentElement.style.display = 'flex';
+            const gajVal = Math.round((sqftVal / 9) * 10) / 10;
+            document.getElementById('card-area-sqyd').textContent = gajVal + ' Gaj';
+            sqydRow.style.display = 'flex';
         } else {
-            document.getElementById('card-area-sqyd').parentElement.style.display = 'none';
+            sqydRow.style.display = 'none';
         }
 
         // Directions direct link to the plot's GPS coordinates
