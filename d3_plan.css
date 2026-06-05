@@ -825,7 +825,7 @@ body, html {
     background: rgba(255,255,255,0.02);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-sm);
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* ═══════════════════════════════════════════
@@ -888,14 +888,10 @@ body, html {
     }
 
     .brand h1 {
-        font-size: 1.1rem;
-    }
-
-    /* Controls repositioning */
-    #zoom-controls {
-        bottom: 30px;
-        top: auto;
-        right: 16px;
+        const sc = Math.min(190 / wU, 100 / hU);
+        const rW = Math.max(70, Math.min(190, wU * sc));
+        const rH = Math.max(38, Math.min(100, hU * sc));
+        const pL = 38, pT = 26, pR = 48, pB = 34;right: 16px;
         left: auto;
         flex-direction: column;
         transform: none;

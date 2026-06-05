@@ -284,7 +284,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!d || d.isRoad) return;
 
         // 1. Update D3 selection state
-        d3.selectAll('.plot').classed('selected', false);
+        // First clear ALL inline styles (stroke/filter) set by hover, then toggle class
+        d3.selectAll('.plot')
+            .classed('selected', false)
+            .style('stroke', null)        // remove inline stroke override
+            .style('stroke-width', null)  // remove inline stroke-width override
+            .style('filter', null);       // remove inline filter override
         const d3Target = d3.selectAll('.plot').filter(p => p.id === plotId);
         d3Target.classed('selected', true);
 
@@ -388,7 +393,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Clear active selection states
     function clearSelection() {
         selectedPlotId = null;
-        d3.selectAll('.plot').classed('selected', false);
+        // Clear both class and any inline style overrides from hover
+        d3.selectAll('.plot')
+            .classed('selected', false)
+            .style('stroke', null)
+            .style('stroke-width', null)
+            .style('filter', null);
         resetLeafletStyles();
         detailCard.classList.add('card-hidden');
         resetD3View();
@@ -476,7 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .attr('x', zone.x1).attr('y', zone.y1)
                 .attr('width', zone.x2 - zone.x1).attr('height', zone.y2 - zone.y1)
                 .attr('fill', zone.color)
-                .style('opacity', 0.06)
+                .style('opacity', 0.03)   /* very subtle tint — keeps boundaries sharp */
                 .style('pointer-events', 'none');
             g.append('text')
                 .attr('class', 'zone-watermark')
@@ -486,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
                 .attr('font-size', 70).attr('font-family', 'Outfit').attr('font-weight', 800)
                 .attr('letter-spacing', 4)
-                .style('opacity', 0.09)
+                .style('opacity', 0.06)   /* subtle watermark */
                 .style('pointer-events', 'none')
                 .text(zone.name.toUpperCase());
         });
@@ -675,8 +685,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         const sliderVal = document.getElementById('opacity-slider').value / 100;
                         poly.setStyle({ fillOpacity: getPlotOpacity(d) * sliderVal * 0.7, opacity: 1 });
                     });
-                    d3.selectAll('.zone-overlay').style('opacity', 0.06);
-                    d3.selectAll('.zone-watermark').style('opacity', 0.09);
+                    d3.selectAll('.zone-overlay').style('opacity', 0.03);
+                    d3.selectAll('.zone-watermark').style('opacity', 0.06);
                     statsEl.classList.add('hidden');
                 } else {
                     const zone = ZONES.find(z => z.id === activeZone);
@@ -697,10 +707,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     });
                     d3.selectAll('.zone-overlay').style('opacity', function() {
-                        return d3.select(this).attr('data-zone') === activeZone ? 0.15 : 0.02;
+                        return d3.select(this).attr('data-zone') === activeZone ? 0.1 : 0.01;
                     });
                     d3.selectAll('.zone-watermark').style('opacity', function() {
-                        return d3.select(this).attr('data-zone') === activeZone ? 0.2 : 0.02;
+                        return d3.select(this).attr('data-zone') === activeZone ? 0.14 : 0.01;
                     });
                     const zonePlots = data.filter(d => {
                         if (d.isRoad || d.isPark || d.id === 'SITE BOUNDARY') return false;
