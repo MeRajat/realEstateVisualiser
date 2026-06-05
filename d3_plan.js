@@ -32,7 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ─── GEOGRAPHIC ANCHOR & CALIBRATION ────────────────
     // Anchor center of site boundary at target coordinates: 26°38'09.5"N 75°37'58.5"E
     const TARGET_LAT = 26.635972;
-    const TARGET_LNG = 75.632917;
+    // Shifted East by ~25 meters (+0.00025)
+    const TARGET_LNG = 75.633167;
 
     // Centroid of site plan data boundary
     const centerX = 332.5;
