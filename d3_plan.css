@@ -425,8 +425,9 @@ body, html {
 #zoom-controls {
     position: absolute;
     bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 20px;
+    left: auto;
+    transform: none;
     z-index: 999;
     display: flex;
     gap: 2px;
@@ -740,9 +741,10 @@ body, html {
 
     /* Controls repositioning */
     #zoom-controls {
-        bottom: auto;
-        top: 80px;
-        left: 20px;
+        bottom: 30px;
+        top: auto;
+        right: 16px;
+        left: auto;
         flex-direction: column;
         transform: none;
     }
