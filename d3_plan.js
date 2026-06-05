@@ -213,7 +213,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderPlotDiagram(d) {
-        const FT = 0.6 * 3.28084;
+        // 1 data unit = 1 ft (verified: width_units × height_units == JSON area in sq.ft)
+        const FT = 1.0;
         const xs = d.points.map(p => p[0]);
         const ys = d.points.map(p => p[1]);
         const wU = Math.max(...xs) - Math.min(...xs);
@@ -344,8 +345,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('card-area').textContent = d.area;
         document.getElementById('card-price').textContent = d.price;
 
-        // Dimensions
-        const FT_PER_UNIT = 0.6 * 3.28084;
+        // Dimensions — 1 data unit = 1 ft (matches JSON area: w_units × h_units = area_sqft)
+        const FT_PER_UNIT = 1.0;
         const dimRow = document.getElementById('row-dimensions');
         if (!d.isPark && !d.isRoad) {
             const xs = d.points.map(p => p[0]);
