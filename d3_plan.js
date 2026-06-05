@@ -219,10 +219,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const FT = 1.0;
         const xs = d.points.map(p => p[0]);
         const ys = d.points.map(p => p[1]);
-        const wU = Math.max(...xs) - Math.min(...xs);
-        const hU = Math.max(...ys) - Math.min(...ys);
-        const wFt = Math.round(wU * FT * 10) / 10;
-        const hFt = Math.round(hU * FT * 10) / 10;
+        const bbW = Math.max(...xs) - Math.min(...xs);
+        const bbH = Math.max(...ys) - Math.min(...ys);
+        
+        const areaSqFt = parseFloat(d.area.replace(/[^\d.]/g, ''));
+        let hFt, wFt;
+        if (bbH > bbW) {
+            hFt = Math.round(bbH * 10) / 10;
+            wFt = parseFloat((areaSqFt / hFt).toFixed(2));
+        } else {
+            wFt = Math.round(bbW * 10) / 10;
+            hFt = parseFloat((areaSqFt / wFt).toFixed(2));
+        }
+
+        const wU = wFt;
+        const hU = hFt;
         const facing = getPlotFacing(d);
         const dirs = new Set(facing.map(f => f.dir));
         const sc = Math.min(190 / wU, 100 / hU);
@@ -347,14 +358,24 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('card-area').textContent = d.area;
         document.getElementById('card-price').textContent = d.price;
 
-        // Dimensions — 1 data unit = 1 ft (matches JSON area: w_units × h_units = area_sqft)
-        const FT_PER_UNIT = 1.0;
+        // Dimensions — Ensure length × breadth exactly equals area
         const dimRow = document.getElementById('row-dimensions');
         if (!d.isPark && !d.isRoad) {
             const xs = d.points.map(p => p[0]);
             const ys = d.points.map(p => p[1]);
-            const wFt = Math.round((Math.max(...xs) - Math.min(...xs)) * FT_PER_UNIT * 10) / 10;
-            const hFt = Math.round((Math.max(...ys) - Math.min(...ys)) * FT_PER_UNIT * 10) / 10;
+            const bbW = Math.max(...xs) - Math.min(...xs);
+            const bbH = Math.max(...ys) - Math.min(...ys);
+            
+            const areaSqFt = parseFloat(d.area.replace(/[^\d.]/g, ''));
+            let hFt, wFt;
+            if (bbH > bbW) {
+                hFt = Math.round(bbH * 10) / 10;
+                wFt = parseFloat((areaSqFt / hFt).toFixed(2));
+            } else {
+                wFt = Math.round(bbW * 10) / 10;
+                hFt = parseFloat((areaSqFt / wFt).toFixed(2));
+            }
+            
             document.getElementById('card-dimensions').textContent = `${wFt} ft × ${hFt} ft`;
             dimRow.style.display = 'flex';
         } else { dimRow.style.display = 'none'; }
