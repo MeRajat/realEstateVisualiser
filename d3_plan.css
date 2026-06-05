@@ -1,25 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    /* Lumina Terra Theme Palette */
-    --bg-deep: #080c14;
-    --bg-surface: rgba(15, 22, 36, 0.7);
-    --bg-panel: rgba(11, 16, 28, 0.75);
+    /* Forest & Mint Theme Palette (from image) */
+    --bg-deep: #0a0c0a;
+    --bg-surface: rgba(18, 22, 20, 0.7);
+    --bg-panel: rgba(18, 22, 20, 0.85);
     
-    --glass-fill: rgba(20, 30, 48, 0.55);
+    --glass-fill: rgba(30, 36, 32, 0.55);
     --glass-border: rgba(255, 255, 255, 0.08);
     --glass-hover: rgba(255, 255, 255, 0.12);
-    --glass-active: rgba(242, 204, 143, 0.15);
+    --glass-active: rgba(45, 212, 191, 0.15);
 
-    /* Curated Accent Colors */
-    --accent-gold: #f2cc8f;
-    --accent-gold-rgb: 242, 204, 143;
-    --accent-green: #81b29a;
-    --accent-green-rgb: 129, 178, 154;
-    --accent-terra: #e07a5f;
-    --accent-terra-rgb: 224, 122, 95;
-    --accent-blue: #3d85c6;
-    --accent-blue-rgb: 61, 133, 200;
+    /* Plot & UI Colors from Image */
+    --accent-available: #519241;
+    --accent-available-rgb: 81, 146, 65;
+    --accent-reserved: #c4a254;
+    --accent-reserved-rgb: 196, 162, 84;
+    --accent-sold: #677e70;
+    --accent-sold-rgb: 103, 126, 112;
+    --accent-mint: #2dd4bf;
+    --accent-mint-rgb: 45, 212, 191;
 
     /* Text System */
     --text-primary: #f1f5f9;
@@ -160,8 +160,8 @@ body, html {
 
 .brand-icon {
     font-size: 1.7rem;
-    color: var(--accent-gold);
-    filter: drop-shadow(0 0 6px rgba(var(--accent-gold-rgb), 0.4));
+    color: var(--accent-mint);
+    filter: drop-shadow(0 0 6px rgba(var(--accent-mint-rgb), 0.4));
     animation: pulseGlow 4s infinite alternate;
 }
 
@@ -212,9 +212,9 @@ body, html {
 
 .view-btn.active {
     color: var(--bg-deep);
-    background: var(--accent-gold);
+    background: var(--accent-mint);
     font-weight: 700;
-    box-shadow: 0 4px 12px rgba(var(--accent-gold-rgb), 0.25);
+    box-shadow: 0 0 10px rgba(var(--accent-mint-rgb), 0.3);
 }
 
 .header-actions {
@@ -301,9 +301,9 @@ body, html {
 }
 
 .card-badge.badge-available {
-    background: rgba(var(--accent-green-rgb), 0.15);
-    color: var(--accent-green);
-    border: 1px solid rgba(var(--accent-green-rgb), 0.25);
+    background: rgba(var(--accent-mint-rgb), 0.15);
+    color: var(--accent-mint);
+    border: 1px solid rgba(var(--accent-mint-rgb), 0.3);
 }
 
 .card-badge.badge-sold {
@@ -367,9 +367,9 @@ body, html {
     gap: 8px;
     width: 100%;
     padding: 12px;
-    background: linear-gradient(135deg, rgba(var(--accent-gold-rgb), 0.15) 0%, rgba(var(--accent-gold-rgb), 0.05) 100%);
-    border: 1px solid rgba(var(--accent-gold-rgb), 0.3);
-    color: var(--accent-gold);
+    background: linear-gradient(135deg, rgba(var(--accent-mint-rgb), 0.15) 0%, rgba(var(--accent-mint-rgb), 0.05) 100%);
+    border: 1px solid rgba(var(--accent-mint-rgb), 0.3);
+    color: var(--accent-mint);
     font-family: 'Outfit', sans-serif;
     font-size: 0.9rem;
     font-weight: 600;
@@ -381,8 +381,8 @@ body, html {
 }
 
 #directions-btn:hover {
-    background: linear-gradient(135deg, rgba(var(--accent-gold-rgb), 0.25) 0%, rgba(var(--accent-gold-rgb), 0.1) 100%);
-    box-shadow: 0 4px 16px rgba(var(--accent-gold-rgb), 0.15);
+    background: linear-gradient(135deg, rgba(var(--accent-mint-rgb), 0.25) 0%, rgba(var(--accent-mint-rgb), 0.1) 100%);
+    box-shadow: 0 4px 16px rgba(var(--accent-mint-rgb), 0.15);
     transform: translateY(-1px);
 }
 
@@ -415,7 +415,7 @@ body, html {
 
 #opacity-slider {
     width: 140px;
-    accent-color: var(--accent-gold);
+    accent-color: var(--accent-mint);
     cursor: pointer;
 }
 
@@ -505,7 +505,7 @@ body, html {
     border: 1px solid rgba(255,255,255,0.15);
 }
 
-.legend-dot.available { background: var(--accent-gold); }
+.legend-dot.available { background: var(--accent-mint); }
 .legend-dot.sold { background: var(--accent-terra); }
 .legend-dot.park { background: var(--accent-green); }
 .legend-dot.road { background: #334155; }
@@ -522,17 +522,17 @@ body, html {
 
 .plot:hover {
     fill-opacity: 0.95 !important;
-    stroke: var(--accent-gold);
+    stroke: var(--accent-mint);
     stroke-width: 2px;
     cursor: pointer;
-    filter: drop-shadow(0 0 10px rgba(var(--accent-gold-rgb), 0.35));
+    filter: drop-shadow(0 0 10px rgba(var(--accent-mint-rgb), 0.35));
 }
 
 .plot.selected {
-    stroke: var(--accent-gold);
+    stroke: var(--accent-mint);
     stroke-width: 2.5px;
     fill-opacity: 1.0 !important;
-    filter: drop-shadow(0 0 14px rgba(var(--accent-gold-rgb), 0.55));
+    filter: drop-shadow(0 0 14px rgba(var(--accent-mint-rgb), 0.55));
 }
 
 .plot-road {
@@ -608,7 +608,7 @@ body, html {
 }
 
 .d3-tooltip strong {
-    color: var(--accent-gold);
+    color: var(--accent-mint);
 }
 
 /* ═══════════════════════════════════════════
@@ -658,7 +658,7 @@ body, html {
 }
 
 .leaflet-popup-content strong {
-    color: var(--accent-gold);
+    color: var(--accent-mint);
     font-size: 1.05rem;
 }
 
@@ -676,7 +676,7 @@ body, html {
 }
 
 .custom-tooltip strong {
-    color: var(--accent-gold);
+    color: var(--accent-mint);
 }
 
 .custom-tooltip::before {
@@ -753,11 +753,11 @@ body, html {
     color: var(--text-primary);
 }
 
-/* "All" button active — gold tint */
+/* "All" button active — mint tint */
 .zone-btn[data-zone="all"].active {
-    background: rgba(var(--accent-gold-rgb), 0.15);
-    border-color: rgba(var(--accent-gold-rgb), 0.35);
-    color: var(--accent-gold);
+    background: rgba(var(--accent-mint-rgb), 0.15);
+    border: 1px solid rgba(var(--accent-mint-rgb), 0.3);
+    color: var(--accent-mint);
 }
 
 /* Per-zone active states — each zone gets its own color */
@@ -847,9 +847,9 @@ body, html {
     font-size: 0.72rem;
     font-weight: 600;
     letter-spacing: 0.4px;
-    background: rgba(var(--accent-gold-rgb), 0.12);
-    color: var(--accent-gold);
-    border: 1px solid rgba(var(--accent-gold-rgb), 0.25);
+    background: rgba(var(--accent-mint-rgb), 0.12);
+    color: var(--accent-mint);
+    border: 1px solid rgba(var(--accent-mint-rgb), 0.25);
 }
 
 /* ═══════════════════════════════════════════
@@ -857,10 +857,10 @@ body, html {
    ═══════════════════════════════════════════ */
 @keyframes pulseGlow {
     0% {
-        filter: drop-shadow(0 0 3px rgba(var(--accent-gold-rgb), 0.3));
+        filter: drop-shadow(0 0 3px rgba(var(--accent-mint-rgb), 0.3));
     }
     100% {
-        filter: drop-shadow(0 0 10px rgba(var(--accent-gold-rgb), 0.55));
+        filter: drop-shadow(0 0 10px rgba(var(--accent-mint-rgb), 0.55));
     }
 }
 

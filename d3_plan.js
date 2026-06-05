@@ -148,13 +148,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ─── COLOR CONVERTERS (Lumina Terra Palette) ────────
+    // ─── COLOR CONVERTERS (Forest & Mint Palette) ────────
     const getPlotColor = (d) => {
         if (d.id === 'SITE BOUNDARY') return 'none';
-        if (d.isRoad) return '#2c3a4a'; // visible warm charcoal
-        if (d.isPark) return 'rgba(129, 178, 154, 0.35)'; // translucent green
-        if (d.status === 'Sold') return 'rgba(224, 122, 95, 0.65)'; // terracotta
-        if (d.status === 'Available') return 'rgba(242, 204, 143, 0.25)'; // translucent gold
+        if (d.isRoad) return '#1e2622'; 
+        if (d.isPark) return 'rgba(65, 107, 52, 0.5)';
+        if (d.status === 'Available') return 'rgba(81, 146, 65, 0.6)';
+        if (d.status === 'Reserved') return 'rgba(196, 162, 84, 0.6)';
+        if (d.status === 'Sold') return 'rgba(103, 126, 112, 0.6)';
         return 'rgba(148, 163, 184, 0.2)';
     };
 
@@ -167,10 +168,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getMapColor = (d) => {
         if (d.id === 'SITE BOUNDARY') return 'transparent';
-        if (d.isRoad) return '#3a4a5a'; // slightly lighter on satellite
-        if (d.isPark) return '#81b29a';
-        if (d.status === 'Sold') return '#e07a5f';
-        if (d.status === 'Available') return '#f2cc8f';
+        if (d.isRoad) return '#242c27'; 
+        if (d.isPark) return '#416b34';
+        if (d.status === 'Available') return '#519241';
+        if (d.status === 'Reserved') return '#c4a254';
+        if (d.status === 'Sold') return '#677e70';
         return '#64748b';
     };
 
@@ -228,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rH = Math.max(38, Math.min(100, hU * sc));
         const pL = 38, pT = 26, pR = 18, pB = 18;
         const W = rW + pL + pR, H = rH + pT + pB;
-        const col = d.status === 'Sold' ? '#e07a5f' : '#f2cc8f';
+        const col = d.status === 'Available' ? '#519241' : (d.status === 'Sold' ? '#677e70' : '#c4a254');
 
         const hEdge = (dir) => {
             if (!dirs.has(dir)) return '';
@@ -250,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <defs><marker id="arr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto">
                 <path d="M0,0 L0,5 L5,2.5 z" fill="#475569"/></marker></defs>
             <rect x="${pL}" y="${pT}" width="${rW}" height="${rH}"
-                  fill="rgba(242,204,143,0.06)" stroke="rgba(255,255,255,0.15)" stroke-width="1" rx="2"/>
+                  fill="rgba(45,212,191,0.06)" stroke="rgba(255,255,255,0.15)" stroke-width="1" rx="2"/>
             <line x1="${pL}" y1="${pT-9}" x2="${pL+rW}" y2="${pT-9}"
                   stroke="#475569" stroke-width="1" marker-start="url(#arr)" marker-end="url(#arr)"/>
             <text x="${pL+rW/2}" y="${pT-13}" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Outfit">${wFt} ft</text>
@@ -317,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mapTarget) {
             mapTarget.setStyle({
                 weight: 3.5,
-                color: '#f2cc8f',
+                color: '#2dd4bf',
                 fillOpacity: getPlotOpacity(d) * 1.2
             });
 
@@ -413,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // D3 Vector highlight
         d3.selectAll('.plot')
             .filter(p => p.id === plotId)
-            .style('stroke', isHovered ? '#f2cc8f' : 'rgba(255, 255, 255, 0.08)')
+            .style('stroke', isHovered ? '#2dd4bf' : 'rgba(255, 255, 255, 0.08)')
             .style('stroke-width', isHovered ? '2px' : '1px');
 
         // Leaflet Vector highlight
@@ -422,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const d = plotsData.find(item => item.id === plotId);
             const sliderVal = document.getElementById('opacity-slider').value / 100;
             poly.setStyle({
-                color: isHovered ? '#f2cc8f' : 'rgba(255,255,255,0.25)',
+                color: isHovered ? '#2dd4bf' : 'rgba(255,255,255,0.25)',
                 weight: isHovered ? 2.5 : 1,
                 fillOpacity: isHovered ? getPlotOpacity(d) * 0.9 : getPlotOpacity(d) * sliderVal * 0.7
             });
@@ -449,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const poly = leafletPolygons[d.id];
             if (poly) {
                 poly.setStyle({
-                    color: d.id === selectedPlotId ? '#f2cc8f' : 'rgba(255,255,255,0.25)',
+                    color: d.id === selectedPlotId ? '#2dd4bf' : 'rgba(255,255,255,0.25)',
                     weight: d.id === selectedPlotId ? 3.5 : 1,
                     fillOpacity: getPlotOpacity(d) * sliderVal * (d.id === selectedPlotId ? 1.2 : 0.7)
                 });
