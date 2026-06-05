@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ─── COLOR CONVERTERS (Lumina Terra Palette) ────────
     const getPlotColor = (d) => {
         if (d.id === 'SITE BOUNDARY') return 'none';
-        if (d.isRoad) return '#1e293b'; // deep slate
+        if (d.isRoad) return '#2c3a4a'; // visible warm charcoal
         if (d.isPark) return 'rgba(129, 178, 154, 0.35)'; // translucent green
         if (d.status === 'Sold') return 'rgba(224, 122, 95, 0.65)'; // terracotta
         if (d.status === 'Available') return 'rgba(242, 204, 143, 0.25)'; // translucent gold
@@ -149,14 +149,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getPlotOpacity = (d) => {
         if (d.id === 'SITE BOUNDARY') return 0;
-        if (d.isRoad) return 0.85;
+        if (d.isRoad) return 1.0; // fully opaque so roads are clearly visible
         if (d.isPark) return 0.45;
         return 0.65;
     };
 
     const getMapColor = (d) => {
         if (d.id === 'SITE BOUNDARY') return 'transparent';
-        if (d.isRoad) return '#1e293b';
+        if (d.isRoad) return '#3a4a5a'; // slightly lighter on satellite
         if (d.isPark) return '#81b29a';
         if (d.status === 'Sold') return '#e07a5f';
         if (d.status === 'Available') return '#f2cc8f';
@@ -391,6 +391,19 @@ document.addEventListener('DOMContentLoaded', () => {
             .attr('y', d => {
                 const sy = d.points.reduce((s, p) => s + p[1], 0);
                 return sy / d.points.length;
+            })
+            .attr('transform', d => {
+                if (!d.isRoad) return null;
+                // Determine road orientation from bounding box
+                const xs = d.points.map(p => p[0]);
+                const ys = d.points.map(p => p[1]);
+                const w = Math.max(...xs) - Math.min(...xs);
+                const h = Math.max(...ys) - Math.min(...ys);
+                const cx = d.points.reduce((s, p) => s + p[0], 0) / d.points.length;
+                const cy = d.points.reduce((s, p) => s + p[1], 0) / d.points.length;
+                // If taller than wide, it's a vertical road — rotate label 90°
+                if (h > w) return `rotate(-90, ${cx}, ${cy})`;
+                return null;
             })
             .text(d => d.isPark ? d.id.replace(' ZONE', '').replace(' BLOCK', '') : d.id);
 

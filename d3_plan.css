@@ -535,7 +535,8 @@ body, html {
 }
 
 .plot-road {
-    stroke: none;
+    stroke: rgba(100, 130, 160, 0.5); /* subtle blue-grey border for contrast */
+    stroke-width: 1px;
     fill-opacity: 1.0;
     pointer-events: none;
 }
@@ -574,13 +575,14 @@ body, html {
 
 .plot-label-road {
     font-family: 'Outfit', sans-serif;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 9px;
-    fill: rgba(255, 255, 255, 0.5);
+    fill: rgba(180, 210, 240, 0.9); /* cool blue-white, high contrast on charcoal road */
     pointer-events: none;
     text-anchor: middle;
     dominant-baseline: middle;
-    letter-spacing: 1px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
 }
 
 /* Floating D3 Tooltip */
