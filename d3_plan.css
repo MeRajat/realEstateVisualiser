@@ -701,6 +701,158 @@ body, html {
 }
 
 /* ═══════════════════════════════════════════
+   ZONE FILTER PANEL
+   ═══════════════════════════════════════════ */
+#zone-panel {
+    position: fixed;
+    top: 90px;
+    left: 20px;
+    z-index: 1000;
+    padding: 14px 16px;
+    background: var(--bg-panel);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    min-width: 180px;
+}
+
+.zone-panel-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+.zone-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.zone-btn {
+    padding: 8px 12px;
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.zone-btn:hover {
+    background: var(--glass-hover);
+    color: var(--text-primary);
+}
+
+/* "All" button active — gold tint */
+.zone-btn[data-zone="all"].active {
+    background: rgba(var(--accent-gold-rgb), 0.15);
+    border-color: rgba(var(--accent-gold-rgb), 0.35);
+    color: var(--accent-gold);
+}
+
+/* Per-zone active states — each zone gets its own color */
+.zone-btn.zone-a.active {
+    background: rgba(242, 204, 143, 0.15);
+    border-color: rgba(242, 204, 143, 0.4);
+    color: #f2cc8f;
+}
+.zone-btn.zone-b.active {
+    background: rgba(129, 178, 154, 0.15);
+    border-color: rgba(129, 178, 154, 0.4);
+    color: #81b29a;
+}
+.zone-btn.zone-c.active {
+    background: rgba(61, 133, 200, 0.15);
+    border-color: rgba(61, 133, 200, 0.4);
+    color: #3d85c6;
+}
+.zone-btn.zone-d.active {
+    background: rgba(224, 122, 95, 0.15);
+    border-color: rgba(224, 122, 95, 0.4);
+    color: #e07a5f;
+}
+
+/* Zone stats section */
+.zone-stats {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.zone-stats.hidden { display: none; }
+
+.zone-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.zone-stat-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.zone-stat-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════
+   PLOT DIAGRAM (SVG in detail card)
+   ═══════════════════════════════════════════ */
+#plot-diagram {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    margin: 8px 0 4px;
+    padding: 10px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════
+   FACING DIRECTION BADGES
+   ═══════════════════════════════════════════ */
+#facing-badges {
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.facing-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    background: rgba(var(--accent-gold-rgb), 0.12);
+    color: var(--accent-gold);
+    border: 1px solid rgba(var(--accent-gold-rgb), 0.25);
+}
+
+/* ═══════════════════════════════════════════
    KEYFRAME ANIMATIONS
    ═══════════════════════════════════════════ */
 @keyframes pulseGlow {

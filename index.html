@@ -81,11 +81,41 @@
         <div class="legend-item"><span class="legend-dot road"></span>Roads</div>
     </div>
 
+    <!-- Floating Zone Filter Panel -->
+    <div id="zone-panel">
+        <div class="zone-panel-title">📍 Zones</div>
+        <div class="zone-btns">
+            <button class="zone-btn active" data-zone="all">All</button>
+            <button class="zone-btn zone-a" data-zone="A">Zone A</button>
+            <button class="zone-btn zone-b" data-zone="B">Zone B</button>
+            <button class="zone-btn zone-c" data-zone="C">Zone C</button>
+            <button class="zone-btn zone-d" data-zone="D">Zone D</button>
+        </div>
+        <div id="zone-stats" class="zone-stats hidden">
+            <div class="zone-stat-row">
+                <span class="zone-stat-label">Total</span>
+                <span class="zone-stat-value" id="zs-total">—</span>
+            </div>
+            <div class="zone-stat-row">
+                <span class="zone-stat-label">Available</span>
+                <span class="zone-stat-value" id="zs-available">—</span>
+            </div>
+            <div class="zone-stat-row">
+                <span class="zone-stat-label">Sold</span>
+                <span class="zone-stat-value" id="zs-sold">—</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Detail Card (initially hidden) -->
     <div id="detail-card" class="card-hidden">
         <button id="close-card">&times;</button>
         <div class="card-badge" id="card-status-badge">Available</div>
         <h2 id="card-plot-id">—</h2>
+        <!-- Plot diagram with dimension lines -->
+        <div id="plot-diagram"></div>
+        <!-- Facing direction badges -->
+        <div id="facing-badges"></div>
         <div class="card-details">
             <div class="card-row" id="row-dimensions">
                 <span class="card-label">Dimensions</span>

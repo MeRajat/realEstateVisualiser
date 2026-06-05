@@ -46,6 +46,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const SCALE_LAT = METERS_PER_UNIT / 110850;
     const SCALE_LNG = METERS_PER_UNIT / 99505;
 
+    // ─── ZONE DEFINITIONS (2×2 quadrant grid) ─────────────
+    // Left/Right split: second vertical road X≈415-427
+    // Top/Bottom split: 9 MT horizontal road Y≈610-622
+    const ZONES = [
+        { id: 'A', name: 'Zone A', color: '#f2cc8f', rgb: '242,204,143', x1: 50,  y1: 292, x2: 415, y2: 610 },
+        { id: 'B', name: 'Zone B', color: '#81b29a', rgb: '129,178,154', x1: 427, y1: 292, x2: 630, y2: 610 },
+        { id: 'C', name: 'Zone C', color: '#3d85c6', rgb: '61,133,200',  x1: 50,  y1: 622, x2: 415, y2: 910 },
+        { id: 'D', name: 'Zone D', color: '#e07a5f', rgb: '224,122,95',  x1: 427, y1: 622, x2: 630, y2: 910 },
+    ];
+    let activeZone = null;
+
     // Convert data coordinate [x, y] to geolocated [lat, lng]
     function toLatLng(point) {
         // Y increases downward in SVG, but Latitude increases upward (North)
@@ -163,6 +174,95 @@ document.addEventListener('DOMContentLoaded', () => {
         return '#64748b';
     };
 
+    // ─── FACING DIRECTION + PLOT ZONE HELPERS ─────────────
+    const getDirArrow = (dir) => ({ North: '↑', South: '↓', East: '→', West: '←' }[dir] || '•');
+
+    function getPlotFacing(d) {
+        const roads = plotsData.filter(r => r.isRoad);
+        const xs = d.points.map(p => p[0]);
+        const ys = d.points.map(p => p[1]);
+        const minX = Math.min(...xs), maxX = Math.max(...xs);
+        const minY = Math.min(...ys), maxY = Math.max(...ys);
+        const TOL = 5;
+        const seen = new Set();
+        const facings = [];
+        roads.forEach(road => {
+            const rxs = road.points.map(p => p[0]);
+            const rys = road.points.map(p => p[1]);
+            const rMinX = Math.min(...rxs), rMaxX = Math.max(...rxs);
+            const rMinY = Math.min(...rys), rMaxY = Math.max(...rys);
+            const isH = (rMaxX - rMinX) > (rMaxY - rMinY);
+            const add = (dir) => { if (!seen.has(dir)) { seen.add(dir); facings.push({ dir, road: road.id }); } };
+            if (isH) {
+                if (Math.abs(rMaxY - minY) <= TOL && rMinX < maxX && rMaxX > minX) add('North');
+                if (Math.abs(rMinY - maxY) <= TOL && rMinX < maxX && rMaxX > minX) add('South');
+            } else {
+                if (Math.abs(rMaxX - minX) <= TOL && rMinY < maxY && rMaxY > minY) add('West');
+                if (Math.abs(rMinX - maxX) <= TOL && rMinY < maxY && rMaxY > minY) add('East');
+            }
+        });
+        return facings;
+    }
+
+    function getPlotZone(d) {
+        const xs = d.points.map(p => p[0]);
+        const ys = d.points.map(p => p[1]);
+        const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+        const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+        return ZONES.find(z => cx >= z.x1 && cx <= z.x2 && cy >= z.y1 && cy <= z.y2) || null;
+    }
+
+    function renderPlotDiagram(d) {
+        const FT = 0.6 * 3.28084;
+        const xs = d.points.map(p => p[0]);
+        const ys = d.points.map(p => p[1]);
+        const wU = Math.max(...xs) - Math.min(...xs);
+        const hU = Math.max(...ys) - Math.min(...ys);
+        const wFt = Math.round(wU * FT * 10) / 10;
+        const hFt = Math.round(hU * FT * 10) / 10;
+        const facing = getPlotFacing(d);
+        const dirs = new Set(facing.map(f => f.dir));
+        const sc = Math.min(190 / wU, 100 / hU);
+        const rW = Math.max(70, Math.min(190, wU * sc));
+        const rH = Math.max(38, Math.min(100, hU * sc));
+        const pL = 38, pT = 26, pR = 18, pB = 18;
+        const W = rW + pL + pR, H = rH + pT + pB;
+        const col = d.status === 'Sold' ? '#e07a5f' : '#f2cc8f';
+
+        const hEdge = (dir) => {
+            if (!dirs.has(dir)) return '';
+            const y = dir === 'North' ? pT : pT + rH;
+            const ly = dir === 'North' ? pT - 5 : pT + rH + 12;
+            return `<line x1="${pL+2}" y1="${y}" x2="${pL+rW-2}" y2="${y}" stroke="${col}" stroke-width="3" stroke-linecap="round"/>
+                    <text x="${pL+rW/2}" y="${ly}" fill="${col}" font-size="8" text-anchor="middle" font-family="Outfit" font-weight="700">${dir.toUpperCase()}</text>`;
+        };
+        const vEdge = (dir) => {
+            if (!dirs.has(dir)) return '';
+            const x = dir === 'West' ? pL : pL + rW;
+            const lx = dir === 'West' ? pL - 5 : pL + rW + 5;
+            const anchor = dir === 'West' ? 'end' : 'start';
+            return `<line x1="${x}" y1="${pT+2}" x2="${x}" y2="${pT+rH-2}" stroke="${col}" stroke-width="3" stroke-linecap="round"/>
+                    <text x="${lx}" y="${pT+rH/2}" fill="${col}" font-size="8" text-anchor="${anchor}" dominant-baseline="middle" font-family="Outfit" font-weight="700">${dir.toUpperCase()}</text>`;
+        };
+
+        return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+            <defs><marker id="arr" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto">
+                <path d="M0,0 L0,5 L5,2.5 z" fill="#475569"/></marker></defs>
+            <rect x="${pL}" y="${pT}" width="${rW}" height="${rH}"
+                  fill="rgba(242,204,143,0.06)" stroke="rgba(255,255,255,0.15)" stroke-width="1" rx="2"/>
+            <line x1="${pL}" y1="${pT-9}" x2="${pL+rW}" y2="${pT-9}"
+                  stroke="#475569" stroke-width="1" marker-start="url(#arr)" marker-end="url(#arr)"/>
+            <text x="${pL+rW/2}" y="${pT-13}" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Outfit">${wFt} ft</text>
+            <line x1="${pL-9}" y1="${pT}" x2="${pL-9}" y2="${pT+rH}"
+                  stroke="#475569" stroke-width="1" marker-start="url(#arr)" marker-end="url(#arr)"/>
+            <text x="${pL-13}" y="${pT+rH/2}" fill="#94a3b8" font-size="9" text-anchor="middle" dominant-baseline="middle"
+                  font-family="Outfit" transform="rotate(-90,${pL-13},${pT+rH/2})">${hFt} ft</text>
+            ${hEdge('North')}${hEdge('South')}${vEdge('West')}${vEdge('East')}
+            <text x="${pL+rW-2}" y="${pT+11}" fill="rgba(255,255,255,0.2)" font-size="9"
+                  text-anchor="end" font-family="Outfit" font-weight="700">N↑</text>
+        </svg>`;
+    }
+
     // ─── BI-DIRECTIONAL SELECTION REGISTRY ────────────────
     let plotsData = [];
     const leafletPolygons = {}; // Map keyed by plotId
@@ -239,35 +339,42 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('card-area').textContent = d.area;
         document.getElementById('card-price').textContent = d.price;
 
-        // Compute dimensions from bounding box of points
-        // Scale: 1 data unit = 0.6 metres = ~1.9685 feet
-        const METERS_PER_DATA_UNIT = 0.6;
-        const FEET_PER_METER = 3.28084;
-        const FT_PER_UNIT = METERS_PER_DATA_UNIT * FEET_PER_METER; // ≈ 1.9685
-
+        // Dimensions
+        const FT_PER_UNIT = 0.6 * 3.28084;
         const dimRow = document.getElementById('row-dimensions');
         if (!d.isPark && !d.isRoad) {
             const xs = d.points.map(p => p[0]);
             const ys = d.points.map(p => p[1]);
-            const wUnits = Math.max(...xs) - Math.min(...xs);
-            const hUnits = Math.max(...ys) - Math.min(...ys);
-            const wFt = Math.round(wUnits * FT_PER_UNIT * 10) / 10;
-            const hFt = Math.round(hUnits * FT_PER_UNIT * 10) / 10;
+            const wFt = Math.round((Math.max(...xs) - Math.min(...xs)) * FT_PER_UNIT * 10) / 10;
+            const hFt = Math.round((Math.max(...ys) - Math.min(...ys)) * FT_PER_UNIT * 10) / 10;
             document.getElementById('card-dimensions').textContent = `${wFt} ft × ${hFt} ft`;
             dimRow.style.display = 'flex';
-        } else {
-            dimRow.style.display = 'none';
-        }
+        } else { dimRow.style.display = 'none'; }
 
         // Area in Gaj (sq. yards): 1 sq.yd = 9 sq.ft
         const sqydRow = document.getElementById('row-sqyd');
         if (!d.isPark && d.area.includes('sq.ft')) {
-            const sqftVal = parseFloat(d.area.replace(/[^\d.]/g, ''));
-            const gajVal = Math.round((sqftVal / 9) * 10) / 10;
+            const gajVal = Math.round((parseFloat(d.area.replace(/[^\d.]/g, '')) / 9) * 10) / 10;
             document.getElementById('card-area-sqyd').textContent = gajVal + ' Gaj';
             sqydRow.style.display = 'flex';
+        } else { sqydRow.style.display = 'none'; }
+
+        // Plot diagram with facing direction
+        const diagramEl = document.getElementById('plot-diagram');
+        const facingEl  = document.getElementById('facing-badges');
+        if (!d.isPark && !d.isRoad) {
+            diagramEl.innerHTML = renderPlotDiagram(d);
+            diagramEl.style.display = 'block';
+            const facing = getPlotFacing(d);
+            if (facing.length > 0) {
+                facingEl.innerHTML = facing.map(f =>
+                    `<span class="facing-badge">${getDirArrow(f.dir)} ${f.dir} Facing</span>`
+                ).join('');
+                facingEl.style.display = 'flex';
+            } else { facingEl.style.display = 'none'; }
         } else {
-            sqydRow.style.display = 'none';
+            diagramEl.style.display = 'none';
+            facingEl.style.display = 'none';
         }
 
         // Directions direct link to the plot's GPS coordinates
@@ -361,7 +468,30 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         data.sort((a, b) => zOrder(a) - zOrder(b));
 
-        // 2. Render D3 Elements
+        // 2a. Render Zone overlays (behind everything)
+        ZONES.forEach(zone => {
+            g.append('rect')
+                .attr('class', 'zone-overlay')
+                .attr('data-zone', zone.id)
+                .attr('x', zone.x1).attr('y', zone.y1)
+                .attr('width', zone.x2 - zone.x1).attr('height', zone.y2 - zone.y1)
+                .attr('fill', zone.color)
+                .style('opacity', 0.06)
+                .style('pointer-events', 'none');
+            g.append('text')
+                .attr('class', 'zone-watermark')
+                .attr('data-zone', zone.id)
+                .attr('x', (zone.x1 + zone.x2) / 2).attr('y', (zone.y1 + zone.y2) / 2)
+                .attr('fill', zone.color)
+                .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+                .attr('font-size', 70).attr('font-family', 'Outfit').attr('font-weight', 800)
+                .attr('letter-spacing', 4)
+                .style('opacity', 0.09)
+                .style('pointer-events', 'none')
+                .text(zone.name.toUpperCase());
+        });
+
+        // 2b. Render D3 Elements
         // Background polygons
         g.selectAll('polygon')
             .data(data)
@@ -509,6 +639,81 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 5. Fit the map bounds to the site boundary
         fitMapToSiteBoundary();
+
+        // 6. Leaflet zone rectangle overlays
+        ZONES.forEach(zone => {
+            const sw = toLatLng([zone.x1, zone.y2]);
+            const ne = toLatLng([zone.x2, zone.y1]);
+            L.rectangle([sw, ne], {
+                color: zone.color, weight: 1.5, dashArray: '7 4',
+                fillColor: zone.color, fillOpacity: 0.05, interactive: false
+            }).addTo(map);
+            const cx = toLatLng([(zone.x1 + zone.x2) / 2, (zone.y1 + zone.y2) / 2]);
+            L.marker(cx, {
+                icon: L.divIcon({
+                    className: '',
+                    html: `<div style="color:${zone.color};font-family:Outfit,sans-serif;font-size:14px;font-weight:800;opacity:0.75;text-shadow:0 0 8px #000,0 1px 3px #000;white-space:nowrap;pointer-events:none">${zone.name.toUpperCase()}</div>`,
+                    iconAnchor: [32, 10]
+                }), interactive: false
+            }).addTo(map);
+        });
+
+        // 7. Zone panel button handlers
+        document.querySelectorAll('.zone-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.zone-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const zoneId = btn.getAttribute('data-zone');
+                activeZone = zoneId === 'all' ? null : zoneId;
+                const statsEl = document.getElementById('zone-stats');
+
+                if (!activeZone) {
+                    d3.selectAll('.plot').style('opacity', 1);
+                    data.forEach(d => {
+                        const poly = leafletPolygons[d.id];
+                        if (!poly) return;
+                        const sliderVal = document.getElementById('opacity-slider').value / 100;
+                        poly.setStyle({ fillOpacity: getPlotOpacity(d) * sliderVal * 0.7, opacity: 1 });
+                    });
+                    d3.selectAll('.zone-overlay').style('opacity', 0.06);
+                    d3.selectAll('.zone-watermark').style('opacity', 0.09);
+                    statsEl.classList.add('hidden');
+                } else {
+                    const zone = ZONES.find(z => z.id === activeZone);
+                    d3.selectAll('.plot').style('opacity', function(pd) {
+                        const pz = getPlotZone(pd);
+                        return pz && pz.id === activeZone ? 1 : 0.1;
+                    });
+                    data.forEach(d => {
+                        if (d.isRoad || d.isPark || d.id === 'SITE BOUNDARY') return;
+                        const poly = leafletPolygons[d.id];
+                        if (!poly) return;
+                        const pz = getPlotZone(d);
+                        const inZone = pz && pz.id === activeZone;
+                        const sliderVal = document.getElementById('opacity-slider').value / 100;
+                        poly.setStyle({
+                            fillOpacity: inZone ? getPlotOpacity(d) * sliderVal * 0.9 : 0.03,
+                            opacity: inZone ? 1 : 0.25
+                        });
+                    });
+                    d3.selectAll('.zone-overlay').style('opacity', function() {
+                        return d3.select(this).attr('data-zone') === activeZone ? 0.15 : 0.02;
+                    });
+                    d3.selectAll('.zone-watermark').style('opacity', function() {
+                        return d3.select(this).attr('data-zone') === activeZone ? 0.2 : 0.02;
+                    });
+                    const zonePlots = data.filter(d => {
+                        if (d.isRoad || d.isPark || d.id === 'SITE BOUNDARY') return false;
+                        const pz = getPlotZone(d);
+                        return pz && pz.id === activeZone;
+                    });
+                    document.getElementById('zs-total').textContent = zonePlots.length;
+                    document.getElementById('zs-available').textContent = zonePlots.filter(d => d.status === 'Available').length;
+                    document.getElementById('zs-sold').textContent = zonePlots.filter(d => d.status === 'Sold').length;
+                    statsEl.classList.remove('hidden');
+                }
+            });
+        });
 
     }).catch(err => {
         console.error('Failed to load plots_data.json:', err);
