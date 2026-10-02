@@ -1,5 +1,6 @@
 // Satellite map with the site plan overlaid (Leaflet). Lazy-loaded on first open.
-import L from 'leaflet';
+import L from './leaflet-global.js';
+import 'leaflet-rotate';
 import 'leaflet/dist/leaflet.css';
 import { features, boundary, toLatLng, ZONES, STATUS_COLORS } from '../shared/site.js';
 import { state, on, selectPlot, matchesFilter } from './store.js';
@@ -8,8 +9,12 @@ import { createNearbyLayer } from './nearby.js';
 
 const MAP_COLORS = { road: '#5f6368', common: '#34a853', selected: '#1a73e8', dim: '#3c4043' };
 
-export function createMapView(el, { opacitySlider } = {}) {
-    const map = L.map(el, { zoomControl: false, attributionControl: true, zoomSnap: 0.25, maxZoom: 20 });
+export function createMapView(el, { opacitySlider, compass } = {}) {
+    const map = L.map(el, {
+        zoomControl: false, attributionControl: true, zoomSnap: 0.25, maxZoom: 20,
+        // Rotation: two-finger twist on touch screens, Shift + drag with a mouse
+        rotate: true, touchRotate: true, shiftKeyRotate: true, rotateControl: false, bearing: 0,
+    });
     map.attributionControl.setPrefix(false);
 
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -93,6 +98,7 @@ export function createMapView(el, { opacitySlider } = {}) {
     }
 
     function reset() {
+        map.setBearing(0);
         map.fitBounds(ll(boundary.points), { ...padding(), animate: true });
     }
 
@@ -113,8 +119,19 @@ export function createMapView(el, { opacitySlider } = {}) {
     on('filter', style);
     style();
 
+    // Compass follows the map's rotation; tapping it turns the map back to north-up
+    const syncCompass = () => {
+        if (compass && state.view === 'map') compass.style.transform = `rotate(${-map.getBearing()}deg)`;
+    };
+    map.on('rotate', syncCompass);
+    const ROTATE_STEP = 30;
+    const rotateBy = (deg) => map.setBearing(map.getBearing() + deg);
+
     let fitted = false;
     return {
+        rotateLeft: () => rotateBy(-ROTATE_STEP),
+        rotateRight: () => rotateBy(ROTATE_STEP),
+        resetNorth: () => map.setBearing(0),
         show() {
             map.invalidateSize();
             const sel = state.selectedId && layers.get(state.selectedId);
@@ -122,6 +139,7 @@ export function createMapView(el, { opacitySlider } = {}) {
             else if (!fitted) map.fitBounds(ll(boundary.points), padding());
             fitted = true;
             syncLabels();
+            syncCompass();
         },
         openNearby: () => nearby.open(),
         hide: () => nearby.close(),

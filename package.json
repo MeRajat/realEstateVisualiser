@@ -14,6 +14,7 @@
     "d3-transition": "^3.0.1",
     "d3-zoom": "^3.0.0",
     "leaflet": "^1.9.4",
+    "leaflet-rotate": "^0.2.8",
     "three": "^0.170.0"
   },
   "devDependencies": {

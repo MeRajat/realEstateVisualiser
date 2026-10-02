@@ -65,11 +65,17 @@
     <div id="view-controls">
         <button type="button" data-action="zoom-in" aria-label="Zoom in">+</button>
         <button type="button" data-action="zoom-out" aria-label="Zoom out">−</button>
+        <button type="button" data-action="rotate-left" class="map-only" aria-label="Rotate map left">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 5H4v4M4.6 8.6A8 8 0 1 1 4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button type="button" data-action="rotate-right" class="map-only" aria-label="Rotate map right">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path d="M16 5h4v4M19.4 8.6A8 8 0 1 0 20 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
         <button type="button" data-action="reset" aria-label="Reset view">
             <svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
     </div>
-    <div id="compass" aria-hidden="true"><span>N</span></div>
+    <button type="button" id="compass" aria-label="Point map north"><span>N</span></button>
     <div id="opacity-control" hidden>
         <label for="opacity-slider">Plan overlay</label>
         <input type="range" id="opacity-slider" min="0" max="100" value="65">

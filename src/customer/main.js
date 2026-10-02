@@ -43,7 +43,7 @@ const loaders = {
     },
     map: async () => {
         const { createMapView } = await import('./mapview.js');
-        return createMapView($('view-map'), { opacitySlider: $('opacity-slider') });
+        return createMapView($('view-map'), { opacitySlider: $('opacity-slider'), compass });
     },
 };
 
@@ -91,6 +91,8 @@ $('view-controls').addEventListener('click', (e) => {
     if (action === 'zoom-in') view.zoomIn();
     if (action === 'zoom-out') view.zoomOut();
     if (action === 'reset') view.reset();
+    if (action === 'rotate-left') view.rotateLeft?.();
+    if (action === 'rotate-right') view.rotateRight?.();
 });
 
 // ─── DETAIL SHEET ────────────────────────────────────
@@ -360,6 +362,9 @@ on('filter', () => {
     $('filter-count').textContent = n;
     $('filter-btn').classList.toggle('is-active', n > 0);
 });
+
+// Tap the compass on the map to turn it back to north-up
+compass.addEventListener('click', () => { if (state.view === 'map') views.map?.resetNorth(); });
 
 // ─── NEARBY (lives on the map) ───────────────────────
 $('nearby-btn').addEventListener('click', async () => {

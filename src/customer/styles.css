@@ -204,6 +204,10 @@ small { font-size: 0.78em; }
     border: 5px solid transparent; border-bottom: 7px solid #ea4335; border-top: 0;
 }
 #compass span { margin-top: 6px; }
+#compass { cursor: default; padding: 0; }
+body[data-view='map'] #compass { cursor: pointer; }
+.map-only { display: none !important; }
+body[data-view='map'] #view-controls .map-only { display: grid !important; }
 
 #opacity-control {
     position: fixed; z-index: 12; left: 12px; bottom: calc(84px + var(--safe-bottom));
