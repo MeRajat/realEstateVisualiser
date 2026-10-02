@@ -3,8 +3,14 @@
 import { society } from './society.js';
 
 const DIRS = ['N', 'E', 'S', 'W'];
-export const DIR_NAMES = { N: 'North', E: 'East', S: 'South', W: 'West' };
-export const DIR_DEG = { N: 0, E: 90, S: 180, W: 270 };
+export const COMPASS8 = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+export const DIR_NAMES = {
+    N: 'North', NE: 'North-East', E: 'East', SE: 'South-East',
+    S: 'South', SW: 'South-West', W: 'West', NW: 'North-West',
+};
+export const DIR_DEG = { N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315 };
+const norm360 = (d) => ((d % 360) + 360) % 360;
+export const compass8 = (deg) => COMPASS8[Math.round(norm360(deg) / 45) % 8];
 
 // Rotate a tower-local (x, z) offset clockwise by `deg` (x east, z south)
 export function rotateXZ(x, z, deg) {
@@ -69,7 +75,11 @@ towers.forEach(t => {
         t.layout.forEach(slot => {
             const type = society.unitTypes[slot.type];
             const id = `${t.id}-${floor}${String(slot.pos).padStart(2, '0')}`;
-            const facing = turn(slot.facing, t.rotation);
+            // siteFacing: cardinal in the (axis-aligned) site frame — used by the 3D scene.
+            // facing/bearing: true compass direction on Earth — shown to buyers & priced.
+            const siteFacing = turn(slot.facing, t.rotation);
+            const bearing = norm360(DIR_DEG[siteFacing] + (society.siteRotation || 0));
+            const facing = compass8(bearing);
             const sideways = slot.facing === 'E' || slot.facing === 'W';
             const [ox, oz] = rotateXZ(slot.x, slot.z, t.rotation);
             const tags = slot.tags || [];
@@ -82,6 +92,8 @@ towers.forEach(t => {
                 type,
                 bhk: type.bhk,
                 facing,
+                bearing,
+                siteFacing,
                 localFacing: slot.facing,
                 tags,
                 status: statusFor(id),

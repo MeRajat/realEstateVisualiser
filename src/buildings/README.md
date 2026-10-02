@@ -7,23 +7,42 @@ A 3D explorer for a residential society, driven entirely by `society.js`. To use
 | `society.js` | **The data**: towers, unit types and room layouts, pricing, availability, amenities |
 | `model.js` | Works out every unit (id, facing, status, rate, total), plus the filters and formatting |
 | `floorplan.js` | Draws the 2D SVG floor plan from a unit type's room rectangles |
-| `scene.js` | three.js scene. It's a dynamic import, so three.js isn't in the first page load |
+| `scene.js` | three.js scene: towers, amenities, orbit, window view, walk-around. It's a dynamic import, so three.js isn't in the first page load |
+| `surroundings.js` | The real-world context: Esri satellite ground, sky and sun with time of day, haze, hills to the N and NE, and neighbourhood houses and trees (uses `src/shared/geo3d.js`) |
+| `surroundings.json` | Generated house and tree positions around the site (see below) |
+| `tools/gen_surroundings.py` | Regenerates `surroundings.json` from Esri imagery and OSM streets |
 | `main.js` | UI: chips, filters, detail sheet, window view, lead capture, analytics |
 | `buildings.css` | Styles. Self-contained, same Forest & Mint theme as the plots site |
+
+## Location
+
+The sample sits on a real, empty parcel west of **Mahal Road, Jagatpura, Jaipur**, centred on 26.807802 N, 75.853483 E. That's about 330 m south of The Greater Mansarovar plots.
+
+- **Orientation:** `siteRotation: 249`, so the gate (site south) faces ENE, straight at Mahal Road. A 74 m private approach road (`approach`) links the gate to Mahal Road.
+- **Clearance:** the footprint was checked against OpenStreetMap roads and buildings (Overpass) and the plot colony boundary. Nothing lies within 55 m. The approach road meets Mahal Road between the roadside structures visible in Esri imagery.
+- **To move the society:**
+  1. Change `location`, `siteRotation` and `approach`.
+  2. Re-run `python3 src/buildings/tools/gen_surroundings.py`, after editing the constants at its top.
 
 ## Conventions
 
 - All distances are in **feet**. The site's origin `(0, 0)` is its centre.
-- `x` grows to the east and `z` grows to the south, so north is `-z`, like a map.
-- Rotations are degrees **clockwise from north**: `0 | 90 | 180 | 270`.
-- Facing is one of `'N' | 'E' | 'S' | 'W'`.
+- **Site frame:** `x` grows to the site's east and `z` to its south. The whole frame is turned `siteRotation` degrees clockwise from true north. The rest of the config stays axis-aligned.
+- **Tower rotations** are degrees **clockwise** in the site frame: `0 | 90 | 180 | 270`.
+- **Facings:**
+  - Layout `facing` is site-frame `'N' | 'E' | 'S' | 'W'`.
+  - Buyers see the **true 8-point facing** (`unit.facing`, `unit.bearing`), worked out from the layout facing plus the tower and site rotations.
+  - `pricing.facingPremium` is keyed by the true facing.
 
 ## Schema
 
 ```js
 society = {
   name, tagline, address, location: { lat, lng }, reraId,
-  site: { width, depth },            // ft, rectangle centred on origin
+  location: { lat, lng },            // site centre on Earth
+  site: { width, depth },            // ft, rectangle centred on location
+  siteRotation: 249,                 // site frame → true north (deg clockwise)
+  approach: { length, width, joins },// gate → main road (ft), road name
   floorHeight: 10,                   // ft slab-to-slab
   stiltParking: true,                // ground = parking, homes start at floor 1
 
@@ -31,7 +50,7 @@ society = {
     basePerSqft: 4800,                         // ₹ / sq.ft of super area
     floorRise: { perFloor: 35, fromFloor: 3 }, // + ₹35/sq.ft per floor from floor 3 up
     premiums: { corner: 75, 'amenity-facing': 150, 'road-facing': -50 }, // keyed by unit tag
-    facingPremium: { E: 60, N: 40 },
+    facingPremium: { E: 60, NE: 50, N: 40 },   // keyed by TRUE 8-point facing
   },
   // rate  = base + perFloor × max(0, floor − fromFloor + 1) + Σ premiums[tag] + facingPremium[facing]
   // total = rate × unitType.superArea
@@ -75,6 +94,35 @@ society = {
 Unit ids are `<tower>-<floor><pos as 2 digits>`. For example, `A-1203` is Tower A, floor 12, unit 03.
 
 `fourPerFloor(type, { frontTags, backTags })` in `society.js` generates the common layout: four units around a central core. For anything else, write `layout` by hand.
+
+## Views
+
+- **Orbit:** the default 3D model. The compass shows true north.
+- **Window view:** pick a unit, then "Window view". The camera sits at the unit's window, at its real height, looking out along its facing.
+  - Drag to look around (±80°). Pinch or scroll zooms.
+  - Floor up/down buttons compare views from different floors.
+- **Walk around:** a Street-View-like mode at eye level (1.6 m).
+  - Drag to look and tap the ground to walk there. The forward/back buttons (or arrow keys) step along.
+  - Movement stays inside the compound and the approach road, and you can't walk through buildings, cores or the pool.
+  - Tapping a unit or amenity opens its card.
+- **Time of day:** the sun button cycles morning, noon and evening. It changes the sun position, the sky and the haze colour.
+- **Nearby:** read from `src/shared/nearby.json` through `import.meta.glob`. The button stays hidden if the file is missing.
+  - Its drive times were computed from the plot colony and are labelled approximate.
+  - The road at our gate (`approach.joins`) shows as "At the gate".
+
+## Surroundings data
+
+`surroundings.json` (~45 KB gzipped) loads lazily with the 3D scene. To build it, `gen_surroundings.py`:
+
+1. Samples a jittered 11 m grid over about 2.9 × 2.9 km.
+2. Classifies each 8 m window from Esri z17 imagery:
+   - **Trees:** dark green canopy.
+   - **Houses:** bright, busy texture within 40 m of an OSM street.
+3. Skips carriageways, the society plus 25 m, the approach road and the plot colony.
+4. Aligns each house to its nearest street, as 2–4 storeys in the Jaipur palette, with rooftop water tanks.
+5. Thins houses and trees with distance.
+
+Data credits: imagery © Esri, streets © OpenStreetMap contributors.
 
 ## Integrations
 

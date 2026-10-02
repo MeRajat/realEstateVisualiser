@@ -1,16 +1,17 @@
 // 3D society model. Lazy-loaded (dynamic import) so the page shell paints first.
 // Renders on demand: the RAF loop only runs while the camera or an animation is moving.
 import {
-    WebGLRenderer, Scene, PerspectiveCamera, Color, Fog, HemisphereLight, DirectionalLight,
+    WebGLRenderer, Scene, PerspectiveCamera, Color,
     Group, Mesh, InstancedMesh, Object3D, Matrix4, Quaternion, Euler, Vector2, Vector3,
     BoxGeometry, PlaneGeometry, CylinderGeometry, ConeGeometry, SphereGeometry, IcosahedronGeometry,
     TorusGeometry, EdgesGeometry, LineSegments, LineBasicMaterial, MeshLambertMaterial,
-    MeshBasicMaterial, ShaderMaterial, CanvasTexture, SRGBColorSpace, RepeatWrapping, BackSide,
+    MeshBasicMaterial, CanvasTexture, SRGBColorSpace,
     Raycaster, MathUtils, Sprite, SpriteMaterial,
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { society, towers, units, DIR_DEG, rotateXZ } from './model.js';
+import { createSurroundings } from './surroundings.js';
 
 const FH = society.floorHeight;
 const SLIDE = 6; // ft a selected unit slides out of the facade
@@ -24,7 +25,7 @@ const C = {
     core: 0xb9b3a6,
     ground: 0x5f6f4c,
     lawn: 0x4f8a3e,
-    road: 0x3a3e3c,
+    road: 0x6a6d6b,
     paving: 0xcfc4ad,
 };
 
@@ -93,25 +94,6 @@ function labelSprite(text) {
     s.scale.set(0.072, 0.0225, 1);
     s.renderOrder = 10;
     return s;
-}
-
-function skyDome() {
-    const mat = new ShaderMaterial({
-        side: BackSide,
-        depthWrite: false,
-        fog: false,
-        uniforms: {
-            top: { value: new Color(0x3d7fb8) },
-            horizon: { value: new Color(0xdfe9e4) },
-            bottom: { value: new Color(0x8b9a78) },
-        },
-        vertexShader: `varying vec3 vPos; void main(){ vPos = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-        fragmentShader: `uniform vec3 top; uniform vec3 horizon; uniform vec3 bottom; varying vec3 vPos;
-            void main(){ float h = vPos.y;
-              vec3 c = h > 0.0 ? mix(horizon, top, pow(h, 0.55)) : mix(horizon, bottom, min(1.0, -h * 6.0));
-              gl_FragColor = vec4(c, 1.0); }`,
-    });
-    return new Mesh(new SphereGeometry(12000, 32, 16), mat);
 }
 
 // ─── AMENITY MODELS ──────────────────────────────────
@@ -228,36 +210,35 @@ function amenityModel(a) {
 }
 
 // ─── SCENE ───────────────────────────────────────────
-export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {}) {
-    const renderer = new WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange, onHeading } = {}) {
+    const renderer = new WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.domElement.setAttribute('aria-label', '3D model of the society. Drag to rotate, pinch to zoom, tap an apartment or amenity.');
     el.appendChild(renderer.domElement);
 
     const scene = new Scene();
-    scene.background = new Color(0xdfe9e4);
-    scene.fog = new Fog(0xdfe9e4, 2500, 14000);
-    scene.add(skyDome());
 
-    const camera = new PerspectiveCamera(42, 1, 2, 30000);
+    // Near plane is small for eye-level walking; log depth keeps the layered ground
+    // (imagery, site base, roads) stable out to the horizon.
+    const camera = new PerspectiveCamera(42, 1, 0.8, 140000);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.maxPolarAngle = MathUtils.degToRad(84);
     controls.minDistance = 30;
-    controls.maxDistance = 2200;
+    controls.maxDistance = 2600;
     controls.screenSpacePanning = false;
     controls.zoomToCursor = true;
 
-    scene.add(new HemisphereLight(0xf3fbff, 0x4a5a3a, 1.6));
-    const sun = new DirectionalLight(0xfff4e0, 2.1);
-    sun.position.set(600, 900, 350);
-    scene.add(sun);
+    // ─── Real surroundings: satellite ground, sky + sun, haze, hills, neighbourhood ─
+    // (invalidate() touches loop state declared further down — only call it once that exists)
+    let loopReady = false;
+    const surroundings = createSurroundings(scene, renderer, { invalidate: () => { if (loopReady) invalidate(); } });
 
-    // ─── Surroundings (ground, neighbourhood blocks, hills) ─────
-    scene.add(new Mesh(new PlaneGeometry(40000, 40000).rotateX(-Math.PI / 2).translate(0, -0.6, 0), lambert(C.ground)));
     const { width: SW, depth: SD } = society.site;
-    scene.add(new Mesh(box(SW, 0.5, SD, 0, -0.5, 0), lambert(0x6e8a55)));
+    // Site base covers the imagery under the compound
+    const base = new Mesh(box(SW + 4, 0.6, SD + 4, 0, -0.6, 0), lambert(0x7d8f5c));
+    scene.add(base);
 
     // boundary wall
     const wallH = 7;
@@ -271,49 +252,26 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
     walls.push(box((SW - gate.width) / 2, wallH, 1.5, (SW + gate.width) / 4, 0, SD / 2));
     walls.push(box(3, 16, 3, gate.x - gate.width / 2 - 1.5, 0, SD / 2), box(3, 16, 3, gate.x + gate.width / 2 + 1.5, 0, SD / 2));
     walls.push(box(gate.width + 6, 2.5, 3, gate.x, 14, SD / 2));
-    scene.add(new Mesh(mergeGeometries(walls), lambert(0xd9cfb6)));
+    const wallMesh = new Mesh(mergeGeometries(walls), lambert(0xd9cfb6));
+    scene.add(wallMesh);
 
-    scene.add(new Mesh(mergeGeometries(society.roads.map(r => box(r.w, 0.3, r.d, r.x, 0, r.z))), lambert(C.road)));
-    // approach road outside the gate
-    scene.add(new Mesh(box(60, 0.2, 6000, 0, -0.4, SD / 2 + 3000), lambert(C.road)));
-    scene.add(new Mesh(box(6000, 0.2, 60, 0, -0.4, SD / 2 + 90), lambert(C.road)));
+    const roadMeshes = [];
+    const roadMesh = new Mesh(mergeGeometries(society.roads.map(r => box(r.w, 0.3, r.d, r.x, 0, r.z))), lambert(C.road));
+    scene.add(roadMesh);
+    roadMeshes.push(roadMesh);
+    // Private approach road from the gate out to Mahal Road (over the imagery)
+    const ap = society.approach;
+    if (ap) {
+        const apMesh = new Mesh(box(ap.width, 0.25, ap.length + 4, gate.x, -0.05, SD / 2 + ap.length / 2), lambert(C.road));
+        scene.add(apMesh);
+        roadMeshes.push(apMesh);
+        const kerbs = [-1, 1].map(sd => box(1.2, 0.6, ap.length, gate.x + sd * (ap.width / 2 + 0.6), -0.05, SD / 2 + ap.length / 2 + 2));
+        scene.add(new Mesh(mergeGeometries(kerbs), lambert(0xc9c2b0)));
+    }
 
     const rand = rng(11);
-    const blocksGeo = new BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
-    const blocks = new InstancedMesh(blocksGeo, lambert(0xffffff), 260);
     const tmp = new Object3D();
     const col = new Color();
-    let bi = 0;
-    while (bi < 260) {
-        const ang = rand() * Math.PI * 2;
-        const r = 520 + rand() * 2600;
-        const x = Math.cos(ang) * r;
-        const z = Math.sin(ang) * r;
-        if (Math.abs(x) < 70 && z > 0) continue; // keep the approach road clear
-        if (Math.abs(z - (SD / 2 + 90)) < 50) continue;
-        const near = r < 1000;
-        tmp.position.set(x, 0, z);
-        tmp.rotation.y = Math.round(rand() * 4) * (Math.PI / 2) + (rand() - 0.5) * 0.2;
-        tmp.scale.set(40 + rand() * 70, near ? 12 + rand() * 30 : 15 + rand() * (rand() > 0.85 ? 140 : 45), 40 + rand() * 70);
-        tmp.updateMatrix();
-        blocks.setMatrixAt(bi, tmp.matrix);
-        blocks.setColorAt(bi, col.setHSL(0.09 + rand() * 0.05, 0.12 + rand() * 0.1, 0.62 + rand() * 0.18));
-        bi++;
-    }
-    scene.add(blocks);
-
-    const hills = new InstancedMesh(new ConeGeometry(1, 1, 7).translate(0, 0.5, 0), lambert(0x6f8f70, { flatShading: true }), 40);
-    for (let i = 0; i < 40; i++) {
-        const ang = (i / 40) * Math.PI * 2 + rand() * 0.1;
-        const r = 6500 + rand() * 2500;
-        tmp.position.set(Math.cos(ang) * r, -20, Math.sin(ang) * r);
-        tmp.rotation.set(0, rand() * 3, 0);
-        const s = 900 + rand() * 1400;
-        tmp.scale.set(s, 180 + rand() * 420, s * (0.7 + rand() * 0.5));
-        tmp.updateMatrix();
-        hills.setMatrixAt(i, tmp.matrix);
-    }
-    scene.add(hills);
 
     // ─── Amenities ───────────────────────────────────
     const amenityGroups = society.amenities.map(amenityModel);
@@ -497,7 +455,7 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
                 return;
             }
             if (i === selectedIdx && slide > 0) {
-                const off = dirVec(DIR_DEG[u.facing]).multiplyScalar(slide);
+                const off = dirVec(DIR_DEG[u.siteFacing]).multiplyScalar(slide);
                 m4.copy(baseMatrices[i]).premultiply(new Matrix4().makeTranslation(off.x, 0, off.z));
                 unitMesh.setMatrixAt(i, m4);
                 return;
@@ -538,8 +496,10 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
     // ─── RENDER LOOP (on demand) ─────────────────────
     let raf = 0;
     let dirty = true;
+    loopReady = true;
     let flight = null;
-    let mode = 'orbit'; // 'orbit' | 'unit-view'
+    let mode = 'orbit'; // 'orbit' | 'unit-view' | 'walk'
+    const headingDir = new Vector3();
 
     function invalidate() {
         dirty = true;
@@ -566,6 +526,7 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
             if (t >= 1) { const done = flight.done; flight = null; done?.(); }
             active = true;
         }
+        if (stepWalk(now)) active = true;
         if (mode === 'orbit' && !(flight && flight.toLook)) {
             if (controls.update()) active = true;
         }
@@ -591,6 +552,11 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
         if (active || dirty) {
             renderer.render(scene, camera);
             dirty = false;
+            if (onHeading) {
+                camera.getWorldDirection(headingDir);
+                const siteDeg = MathUtils.radToDeg(Math.atan2(headingDir.x, -headingDir.z));
+                onHeading((siteDeg + society.siteRotation + 360) % 360);
+            }
         }
         if (active && !raf) raf = requestAnimationFrame(loop);
     }
@@ -629,7 +595,7 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
     }
 
     function focusUnit(u) {
-        const facing = dirVec(DIR_DEG[u.facing]);
+        const facing = dirVec(DIR_DEG[u.siteFacing]);
         const side = new Vector3(-facing.z, 0, facing.x).multiplyScalar(0.35);
         const target = new Vector3(u.world.x, u.world.y + FH / 2, u.world.z);
         // Back off further when panels leave only a thin strip of canvas visible
@@ -648,15 +614,20 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
         fly({ pos, target, duration: 900 });
     }
 
-    // ─── VIEW FROM APARTMENT ─────────────────────────
+    // ─── FIRST PERSON: window view + walk-around ─────
+    // Both share drag-to-look. 'unit-view' sits at a window looking out (yaw clamped);
+    // 'walk' is eye-level (1.6 m) inside the compound — tap the ground to walk there.
+    const EYE = 5.25; // ft ≈ 1.6 m
     let saved = null;
     let yaw = 0;
     let pitch = 0;
     let baseYaw = 0;
     let viewUnit = null;
+    let walk = null; // active walk animation { from, to, t0, duration }
+    const isFirstPerson = () => mode === 'unit-view' || mode === 'walk';
 
     function eyeFor(u) {
-        const f = dirVec(DIR_DEG[u.facing]);
+        const f = dirVec(DIR_DEG[u.siteFacing]);
         const half = (u.localFacing === 'N' || u.localFacing === 'S' ? u.local.d : u.local.w) / 2;
         return new Vector3(u.world.x, u.world.y + 5.2, u.world.z).add(f.multiplyScalar(half + 1.5));
     }
@@ -666,18 +637,25 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
         const p = MathUtils.degToRad(pitch);
         return new Vector3(Math.sin(y) * Math.cos(p), Math.sin(p), -Math.cos(y) * Math.cos(p));
     }
+    const applyLook = () => camera.lookAt(camera.position.clone().add(lookDir()));
+
+    function saveOrbit() {
+        if (mode === 'orbit') saved = { pos: camera.position.clone(), target: controls.target.clone(), fov: camera.fov };
+        controls.enabled = false;
+        renderer.domElement.style.cursor = 'grab';
+    }
 
     function enterUnitView(u, { animate = true } = {}) {
-        if (mode === 'orbit') saved = { pos: camera.position.clone(), target: controls.target.clone(), fov: camera.fov };
+        saveOrbit();
         mode = 'unit-view';
         viewUnit = u;
-        controls.enabled = false;
-        baseYaw = DIR_DEG[u.facing];
+        walk = null;
+        ring.visible = false;
+        baseYaw = DIR_DEG[u.siteFacing];
         yaw = 0;
-        pitch = -14;
+        pitch = -10;
         const eye = eyeFor(u);
         const look = eye.clone().add(lookDir().multiplyScalar(100));
-        renderer.domElement.style.cursor = 'grab';
         if (animate) fly({ pos: eye, look, duration: 1300, fov: 62 });
         else {
             camera.position.copy(eye);
@@ -689,12 +667,87 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
         onViewChange?.({ mode, unit: u });
     }
 
-    function exitUnitView() {
-        if (mode !== 'unit-view') return;
+    // Walkable area: inside the compound wall (plus the approach road), minus buildings & water
+    const walkBlocks = [
+        ...society.amenities.filter(a => ['gym', 'clubhouse', 'temple', 'pool'].includes(a.kind))
+            .map(a => ({ x: a.x, z: a.z, hw: a.w / 2 + 2, hd: a.d / 2 + 2 })),
+        ...towers.map(t => {
+            const fp = t.footprint;
+            const [cx, cz] = towerCentre(t);
+            const sideways = t.rotation % 180 !== 0;
+            // only the lift/stair core blocks you — the rest of the ground floor is open stilts
+            return { x: cx, z: cz, hw: (sideways ? 6 : 11) + 1.5, hd: (sideways ? 11 : 6) + 1.5, w: fp.w };
+        }),
+    ];
+    function clampWalk(p) {
+        const m = 3;
+        const onApproach = ap && Math.abs(p.x - gate.x) < ap.width / 2 - 1 && p.z > SD / 2 - m;
+        p.x = MathUtils.clamp(p.x, -SW / 2 + m, SW / 2 - m);
+        p.z = MathUtils.clamp(p.z, -SD / 2 + m, onApproach ? SD / 2 + ap.length - 4 : SD / 2 - m);
+        for (const o of walkBlocks) {
+            const dx = p.x - o.x, dz = p.z - o.z;
+            const px = o.hw - Math.abs(dx), pz = o.hd - Math.abs(dz);
+            if (px > 0 && pz > 0) {
+                if (px < pz) p.x = o.x + Math.sign(dx || 1) * o.hw;
+                else p.z = o.z + Math.sign(dz || 1) * o.hd;
+            }
+        }
+        p.y = EYE;
+        return p;
+    }
+
+    function walkTo(target) {
+        const to = clampWalk(target.clone());
+        const dist = to.distanceTo(camera.position);
+        if (dist < 1) return;
+        walk = { from: camera.position.clone(), to, t0: performance.now(), duration: MathUtils.clamp(dist / 38, 0.45, 2.4) * 1000 };
+        ring.position.set(to.x, 0.25, to.z);
+        ring.visible = true;
+        invalidate();
+    }
+
+    function stepWalk(now) {
+        if (!walk) return false;
+        const t = Math.min(1, (now - walk.t0) / walk.duration);
+        const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        camera.position.lerpVectors(walk.from, walk.to, e);
+        camera.position.y = EYE + Math.sin(e * Math.PI * Math.max(1, walk.to.distanceTo(walk.from) / 12)) * 0.12; // gentle step bob
+        applyLook();
+        if (t >= 1) {
+            camera.position.y = EYE;
+            walk = null;
+            ring.visible = false;
+        }
+        return true;
+    }
+
+    function enterWalk() {
+        saveOrbit();
+        mode = 'walk';
+        viewUnit = null;
+        // Start just inside the gate, looking up the main drive into the compound
+        baseYaw = 0;
+        yaw = 0;
+        pitch = 2;
+        const start = new Vector3(gate.x, EYE, SD / 2 - 14);
+        fly({ pos: start, look: start.clone().add(lookDir().multiplyScalar(100)), duration: 1500, fov: 70 });
+        onViewChange?.({ mode, unit: null });
+    }
+
+    function step(sign) {
+        if (mode !== 'walk') return;
+        const y = MathUtils.degToRad(baseYaw + yaw);
+        walkTo(camera.position.clone().add(new Vector3(Math.sin(y), 0, -Math.cos(y)).multiplyScalar(32 * sign)));
+    }
+
+    function exitFirstPerson() {
+        if (!isFirstPerson()) return;
         const s = saved || homePose();
         const fromLook = currentLook();
         mode = 'orbit';
         viewUnit = null;
+        walk = null;
+        ring.visible = false;
         renderer.domElement.style.cursor = '';
         controls.target.copy(fromLook);
         fly({
@@ -704,13 +757,18 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
         onViewChange?.({ mode, unit: null });
     }
 
-    // drag-to-look + pinch/wheel zoom in unit view
+    // Destination marker for tap-to-walk
+    const ring = new Mesh(new TorusGeometry(3.2, 0.35, 6, 32).rotateX(Math.PI / 2), new MeshBasicMaterial({ color: 0x2dd4bf, transparent: true, opacity: 0.85 }));
+    ring.visible = false;
+    scene.add(ring);
+
+    // drag-to-look + pinch/wheel zoom in first person
     const pointers = new Map();
     let pinchStart = 0;
     let fovStart = 62;
     renderer.domElement.addEventListener('pointerdown', e => {
         pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY });
-        if (mode === 'unit-view') {
+        if (isFirstPerson()) {
             renderer.domElement.setPointerCapture(e.pointerId);
             if (pointers.size === 2) {
                 const [a, b] = [...pointers.values()];
@@ -726,18 +784,18 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
         const dy = e.clientY - p.y;
         p.x = e.clientX;
         p.y = e.clientY;
-        if (mode !== 'unit-view' || flight) return;
+        if (!isFirstPerson() || flight) return;
         if (pointers.size === 2) {
             const [a, b] = [...pointers.values()];
             const dist = Math.hypot(a.x - b.x, a.y - b.y);
-            camera.fov = MathUtils.clamp(fovStart * (pinchStart / Math.max(dist, 1)), 30, 80);
+            camera.fov = MathUtils.clamp(fovStart * (pinchStart / Math.max(dist, 1)), 30, 85);
             camera.updateProjectionMatrix();
         } else {
             const k = camera.fov / renderer.domElement.clientHeight;
-            yaw = MathUtils.clamp(yaw - dx * k, -80, 80);
-            pitch = MathUtils.clamp(pitch + dy * k, -45, 25);
+            yaw = mode === 'walk' ? yaw - dx * k : MathUtils.clamp(yaw - dx * k, -80, 80);
+            pitch = MathUtils.clamp(pitch + dy * k, mode === 'walk' ? -60 : -45, mode === 'walk' ? 45 : 25);
         }
-        camera.lookAt(camera.position.clone().add(lookDir()));
+        applyLook();
         invalidate();
     });
     const release = e => {
@@ -745,27 +803,47 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
         pointers.delete(e.pointerId);
         if (!p || e.type === 'pointercancel') return;
         const moved = Math.hypot(e.clientX - p.x0, e.clientY - p.y0);
-        if (moved < 6 && mode === 'orbit' && pointers.size === 0) pick(e);
+        if (moved < 6 && pointers.size === 0 && (mode === 'orbit' || mode === 'walk')) pick(e);
     };
     renderer.domElement.addEventListener('pointerup', release);
     renderer.domElement.addEventListener('pointercancel', release);
     renderer.domElement.addEventListener('wheel', e => {
-        if (mode !== 'unit-view') return;
+        if (!isFirstPerson()) return;
         e.preventDefault();
-        camera.fov = MathUtils.clamp(camera.fov + e.deltaY * 0.03, 30, 80);
+        camera.fov = MathUtils.clamp(camera.fov + e.deltaY * 0.03, 30, 85);
         camera.updateProjectionMatrix();
         invalidate();
     }, { passive: false });
+    renderer.domElement.addEventListener('keydown', e => {
+        if (mode !== 'walk') return;
+        if (e.key === 'ArrowUp' || e.key === 'w') step(1);
+        if (e.key === 'ArrowDown' || e.key === 's') step(-1);
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            yaw += e.key === 'ArrowLeft' ? -15 : 15;
+            applyLook();
+            invalidate();
+        }
+    });
+    renderer.domElement.tabIndex = 0;
 
     // ─── PICKING ─────────────────────────────────────
     const ray = new Raycaster();
     const ndc = new Vector2();
+    const groundTargets = [base, ...roadMeshes];
     function pick(e) {
         const r = renderer.domElement.getBoundingClientRect();
         ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
         ray.setFromCamera(ndc, camera);
-        const hits = ray.intersectObjects([unitMesh, ...amenityMeshes], false);
+        const hits = ray.intersectObjects([unitMesh, ...amenityMeshes, ...(mode === 'walk' ? groundTargets : [])], false);
         const hit = hits[0];
+        if (mode === 'walk') {
+            if (!hit) return;
+            if (hit.object === unitMesh) return onUnit?.(units[hit.instanceId]);
+            // Flat amenity surfaces (lawn, play floor, parking) are walkable; buildings open their card
+            if (hit.object.userData.amenity && hit.point.y > 2.5) return onAmenity?.(hit.object.userData.amenity);
+            walkTo(hit.point);
+            return;
+        }
         if (!hit) return onEmpty?.();
         if (hit.object === unitMesh) onUnit?.(units[hit.instanceId]);
         else onAmenity?.(hit.object.userData.amenity);
@@ -787,7 +865,7 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
         applyViewOffset();
-        if (mode === 'unit-view') camera.lookAt(camera.position.clone().add(lookDir()));
+        if (isFirstPerson()) applyLook();
         invalidate();
     }
     new ResizeObserver(resize).observe(el);
@@ -811,6 +889,7 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
                 focusUnit(u);
             }
             if (u && mode === 'unit-view') enterUnitView(u, { animate: true });
+            // (in walk mode the card opens but you stay on the ground)
         },
         focusAmenity,
         setFilter(fn) {
@@ -822,12 +901,17 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
             placeUnits();
         },
         enterUnitView,
-        exitUnitView,
+        exitUnitView: exitFirstPerson,
+        enterWalk,
+        exitWalk: exitFirstPerson,
+        step,
+        setTime: (t) => surroundings.setTime(t),
+        get time() { return surroundings.time; },
         get mode() { return mode; },
         get viewUnit() { return viewUnit; },
         zoom(factor) {
-            if (mode === 'unit-view') {
-                camera.fov = MathUtils.clamp(camera.fov * (factor < 1 ? 0.8 : 1.25), 30, 80);
+            if (isFirstPerson()) {
+                camera.fov = MathUtils.clamp(camera.fov * (factor < 1 ? 0.8 : 1.25), 30, 85);
                 camera.updateProjectionMatrix();
                 invalidate();
                 return;
@@ -844,7 +928,7 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange } = {
             invalidate();
         },
         reset() {
-            if (mode === 'unit-view') return exitUnitView();
+            if (isFirstPerson()) return exitFirstPerson();
             const h = homePose();
             fly({ pos: h.pos, target: h.target, duration: 900 });
         },

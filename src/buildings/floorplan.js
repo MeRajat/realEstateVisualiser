@@ -48,13 +48,13 @@ function roomLabel(r) {
         <text x="${cx}" y="${cy + size * 0.95}" font-size="${size * 0.78}" class="fp-dim">${ft(r.w)} × ${ft(r.h)}</text>`;
 }
 
-export function floorPlanSVG(type, { facing = 'N', title = '' } = {}) {
+export function floorPlanSVG(type, { facing = 'N', bearing = DIR_DEG[facing] ?? 0, title = '' } = {}) {
     const W = type.width;
     const D = type.depth;
     const pad = 5;
     const top = 8;
     // The plan's top edge is the unit's facing side, so north points `-facing` degrees from up
-    const north = -DIR_DEG[facing];
+    const north = -bearing;
     const balcony = type.rooms.filter(r => r.kind === 'balcony');
     return `<svg class="floorplan" viewBox="${-pad} ${-top} ${W + pad * 2} ${D + top + pad + 2}" role="img"
         aria-label="${esc(title || type.name)} floor plan, ${W} by ${D} feet, front faces ${DIR_NAMES[facing]}">

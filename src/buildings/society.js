@@ -5,8 +5,12 @@
 //  Conventions
 //  • All distances are in FEET. Site origin (0, 0) is the centre of the site.
 //  • x grows to the EAST, z grows to the SOUTH (i.e. north is -z), like a map.
-//  • Rotations are degrees CLOCKWISE from north: 0 | 90 | 180 | 270.
-//  • Facing letters: 'N' | 'E' | 'S' | 'W'.
+//  • x grows to the site's EAST, z to its SOUTH — in the SITE frame. The whole site
+//    frame is turned `siteRotation` degrees clockwise from true north, so towers
+//    and roads can line up with real roads while the config stays axis-aligned.
+//  • Tower rotations are degrees CLOCKWISE (site frame): 0 | 90 | 180 | 270.
+//  • Layout facing letters are site-frame 'N' | 'E' | 'S' | 'W'; true compass
+//    facings (8-point) are derived from them + rotations.
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ─── UNIT TYPES ──────────────────────────────────────────────────────────────
@@ -71,14 +75,21 @@ function fourPerFloor(type, { core = 12, frontTags = [], backTags = [] } = {}) {
 }
 
 export const society = {
-    name: 'Mansarovar Heights',
-    tagline: '2 & 3 BHK Apartments · Jaipur',
-    address: 'Mansarovar Extension, Jaipur, Rajasthan',
-    location: { lat: 26.8434, lng: 75.7563 },
+    name: 'Jagatpura Heights',
+    tagline: '2 & 3 BHK Apartments · Mahal Road, Jaipur',
+    address: 'Off Mahal Road, Jagatpura, Jaipur, Rajasthan 302017',
+    // Centre of the site. Sample parcel: open land west of Mahal Road, ~330 m south of
+    // The Greater Mansarovar plots; checked against OSM roads/buildings (≥ 55 m clear).
+    location: { lat: 26.807802, lng: 75.853483 },
     reraId: 'RAJ/P/2026/0000 (sample)',
 
-    // Site footprint (rectangle, centred on origin)
+    // Site footprint (rectangle, centred on location)
     site: { width: 420, depth: 360 },
+    // Site frame → true north: the gate side (site south) faces ENE (69°), straight at
+    // Mahal Road, which runs NNW–SSE just east of the parcel.
+    siteRotation: 249,
+    // Private approach road from the gate to Mahal Road (ft, along the gate direction)
+    approach: { length: 243, width: 30, joins: 'Mahal Road' },
     floorHeight: 10, // ft, slab to slab
     stiltParking: true, // ground floor = open stilt parking; homes start on floor 1
 
@@ -91,7 +102,7 @@ export const society = {
         basePerSqft: 4800,
         floorRise: { perFloor: 35, fromFloor: 3 },
         premiums: { corner: 75, 'amenity-facing': 150, 'road-facing': -50 },
-        facingPremium: { E: 60, N: 40 },
+        facingPremium: { E: 60, NE: 50, N: 40 }, // keyed by true 8-point facing
     },
 
     // ─── TOWERS ──────────────────────────────────────────────────────────────
@@ -150,7 +161,7 @@ export const society = {
         { x: 190, z: 0, w: 20, d: 340 },
         { x: 0, z: -35, w: 360, d: 16 },
     ],
-    gate: { x: 0, z: 180, width: 40 }, // main entrance on the south boundary
+    gate: { x: 0, z: 180, width: 40 }, // main entrance on the site-south boundary (faces Mahal Road)
 
     unitTypes,
 };

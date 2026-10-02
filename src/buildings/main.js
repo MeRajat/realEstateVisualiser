@@ -3,7 +3,7 @@
 import './buildings.css';
 import {
     society, units, unitById, towers, stats, BUDGETS, FLOOR_BANDS, DEFAULT_FILTER, matches,
-    formatMoney, formatRate, ordinal, DIR_NAMES,
+    formatMoney, formatRate, ordinal, DIR_NAMES, COMPASS8,
 } from './model.js';
 import { floorPlanSVG } from './floorplan.js';
 import { track, trackVisit, submitLead } from '../customer/api.js';
@@ -24,6 +24,7 @@ const state = {
     cutFloor: null,
     lead: readLead(),
     viewing: false,
+    walking: false,
 };
 let scene = null;
 
@@ -53,7 +54,7 @@ const FILTER_GROUPS = [
     { key: 'budget', label: 'Budget', options: BUDGETS },
     { key: 'tower', label: 'Tower', options: towers.map(t => ({ id: t.id, label: t.name })) },
     { key: 'floors', label: 'Floor', options: FLOOR_BANDS },
-    { key: 'facing', label: 'Facing', options: ['N', 'E', 'S', 'W'].map(d => ({ id: d, label: DIR_NAMES[d] })) },
+    { key: 'facing', label: 'Facing', options: COMPASS8.filter(d => units.some(u => u.facing === d)).map(d => ({ id: d, label: DIR_NAMES[d] })) },
 ];
 
 function renderChips() {
@@ -153,7 +154,7 @@ function closeSheet() {
 const isMobile = () => window.matchMedia('(max-width: 767px)').matches;
 function syncInsets() {
     if (!scene) return;
-    if (state.viewing) return scene.setInsets({});
+    if (state.viewing || (state.walking && sheet.hidden)) return scene.setInsets({});
     const top = $('legend').getBoundingClientRect().bottom;
     if (sheet.hidden) return scene.setInsets({ top: isMobile() ? top : 0 });
     if (isMobile()) scene.setInsets({ top, bottom: sheet.offsetHeight });
@@ -224,7 +225,7 @@ function unitSheet(u) {
             <div><span>Facing</span><b>${DIR_NAMES[u.facing]}</b></div>
         </div>
         ${priceBlock(u)}`;
-    const plan = `<div class="plan-wrap">${floorPlanSVG(u.type, { facing: u.facing, title: u.id })}</div>
+    const plan = `<div class="plan-wrap">${floorPlanSVG(u.type, { facing: u.facing, bearing: u.bearing, title: u.id })}</div>
         <p class="fineprint">Indicative layout for ${esc(u.type.name)} · dimensions in feet. Actual unit may be mirrored.</p>`;
     const similar = sold ? similarUnits(u) : [];
     return `
@@ -280,6 +281,7 @@ sheetBody.addEventListener('click', e => {
         renderUnitSheet();
         return;
     }
+    if (t.dataset.nearCat) return openSheet(nearbySheet(t.dataset.nearCat));
     if (t.dataset.unit) return selectUnit(unitById.get(t.dataset.unit));
     if (t.dataset.amenity) return selectAmenity(society.amenities.find(a => a.id === t.dataset.amenity));
     switch (t.dataset.action) {
@@ -332,6 +334,7 @@ function selectAmenity(a) {
 
 $('amenities-btn').addEventListener('click', () => {
     if (state.viewing) exitView();
+    if (state.walking) exitWalk();
     state.unit = null;
     scene?.selectUnit(null, { focus: false });
     openSheet(amenitiesListSheet());
@@ -348,6 +351,7 @@ function updateViewbar(u) {
 
 function enterView(u) {
     if (!scene || !u) return;
+    if (state.walking) leaveWalkUi();
     state.viewing = true;
     document.body.classList.add('is-viewing');
     closeSheet();
@@ -471,16 +475,122 @@ $('side-controls').addEventListener('click', e => {
     if (!scene || !a) return;
     if (a === 'zoom-in') scene.zoom(0.65);
     if (a === 'zoom-out') scene.zoom(1.5);
-    if (a === 'reset') scene.reset();
+    if (a === 'reset') {
+        if (state.viewing) return exitView();
+        if (state.walking) return exitWalk();
+        scene.reset();
+    }
+    if (a === 'time') cycleTime();
+});
+
+// ─── TIME OF DAY ─────────────────────────────────────
+const TIME_ORDER = ['morning', 'noon', 'evening'];
+const TIME_LABEL = { morning: 'Morning · sunrise in the east', noon: 'Noon', evening: 'Evening · sunset in the west' };
+function cycleTime() {
+    if (!scene) return;
+    const next = TIME_ORDER[(TIME_ORDER.indexOf(scene.time) + 1) % TIME_ORDER.length];
+    scene.setTime(next);
+    $('time-btn').setAttribute('aria-label', `Time of day: ${next}. Tap to change`);
+    $('time-btn').dataset.time = next;
+    toast(TIME_LABEL[next]);
+}
+
+// ─── WALK AROUND ─────────────────────────────────────
+function enterWalk() {
+    if (!scene) return;
+    if (state.viewing) exitView();
+    state.walking = true;
+    document.body.classList.add('is-walking');
+    closeSheet();
+    state.unit = null;
+    scene.selectUnit(null, { focus: false });
+    $('walkbar').hidden = false;
+    $('walk-pad').hidden = false;
+    if (state.cutFloor != null) { cut.value = cut.max; updateCut(); }
+    scene.enterWalk();
+    syncInsets();
+    track('view_mode', { mode: 'walk' });
+}
+
+function leaveWalkUi() {
+    state.walking = false;
+    document.body.classList.remove('is-walking');
+    $('walkbar').hidden = true;
+    $('walk-pad').hidden = true;
+}
+
+function exitWalk() {
+    if (!state.walking) return;
+    leaveWalkUi();
+    closeSheet();
+    scene?.exitWalk();
+    syncInsets();
+}
+
+$('walk-btn').addEventListener('click', enterWalk);
+$('walk-exit').addEventListener('click', exitWalk);
+$('walk-fwd').addEventListener('click', () => scene?.step(1));
+$('walk-back').addEventListener('click', () => scene?.step(-1));
+
+// ─── NEARBY (optional data: src/shared/nearby.json) ──
+const nearbyLoader = Object.values(import.meta.glob('../shared/nearby.json'))[0];
+let nearby = null;
+const bearingTo = ([lat, lng]) => {
+    const o = society.location;
+    const dE = (lng - o.lng) * 111320 * Math.cos((o.lat * Math.PI) / 180);
+    const dN = (lat - o.lat) * 110850;
+    const deg = (Math.atan2(dE, dN) * 180) / Math.PI;
+    return { km: Math.hypot(dE, dN) / 1000, dir: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(((deg + 360) % 360) / 45) % 8] };
+};
+function nearbySheet(cat = 'all') {
+    const cats = nearby.categories || [];
+    const places = (nearby.places || []).filter(p => cat === 'all' || p.cat === cat)
+        .map(p => ({ ...p, ...bearingTo(p.pos) }))
+        .sort((a, b) => (a.driveMin ?? a.km * 3) - (b.driveMin ?? b.km * 3));
+    const roads = cat === 'all' ? (nearby.roads || []) : [];
+    const gateRoad = society.approach?.joins;
+    const gateM = Math.round((society.approach?.length || 0) * 0.3048);
+    const row = (p) => p.name === gateRoad
+        ? `<li><div><b>${esc(p.name)}</b><small>${esc(p.type || '')}</small></div>
+            <div class="near-dist"><b>At the gate</b><small>${gateM} m private approach road</small></div></li>`
+        : `<li><div><b>${esc(p.name)}</b><small>${esc(p.kind || p.type || '')}</small></div>
+        <div class="near-dist"><b>${p.driveMin != null ? `${Math.round(p.driveMin)} min` : `${p.km.toFixed(1)} km`}</b>
+        <small>${p.driveKm != null ? `${(+p.driveKm).toFixed(1)} km drive` : ''} · ${p.dir}</small></div></li>`;
+    return `
+        <h2 class="sheet-title">Nearby</h2>
+        <p class="muted">${esc(`Gate opens onto ${society.approach?.joins || 'the main road'}.`)} Drive times are approximate.</p>
+        <div class="pills near-cats">
+            ${[{ id: 'all', label: 'All' }, ...cats].map(c => `<button type="button" class="pill" data-near-cat="${esc(c.id)}" aria-pressed="${c.id === cat}">${esc(c.label)}</button>`).join('')}
+        </div>
+        ${roads.length ? `<h3 class="near-h">Road connectivity</h3><ul class="near-list">${roads.map(r => row({ ...r, ...bearingTo(r.pos) })).join('')}</ul>` : ''}
+        <h3 class="near-h">${cat === 'all' ? 'Places' : esc(cats.find(c => c.id === cat)?.label || '')}</h3>
+        <ul class="near-list">${places.map(row).join('') || '<li class="muted">Nothing listed yet.</li>'}</ul>`;
+}
+if (nearbyLoader) {
+    nearbyLoader().then(m => {
+        nearby = m.default || m;
+        if (nearby?.places?.length) $('nearby-btn').hidden = false;
+    }).catch(() => {});
+}
+$('nearby-btn').addEventListener('click', () => {
+    if (!nearby) return;
+    if (state.viewing) exitView();
+    if (state.walking) exitWalk();
+    state.unit = null;
+    state.amenity = null;
+    scene?.selectUnit(null, { focus: false });
+    openSheet(nearbySheet());
 });
 
 document.addEventListener('keydown', e => {
     if (e.key !== 'Escape' || document.querySelector('dialog[open]')) return;
-    if (state.viewing) exitView();
-    else if (!sheet.hidden) sheet.querySelector('.sheet-close').click();
+    if (!sheet.hidden) sheet.querySelector('.sheet-close').click();
+    else if (state.viewing) exitView();
+    else if (state.walking) exitWalk();
 });
 
 // ─── BOOT ────────────────────────────────────────────
+const rose = $('compass-rose');
 renderChips();
 updateCounts();
 trackVisit();
@@ -494,6 +604,7 @@ async function boot() {
         onAmenity: (a) => selectAmenity(a),
         onEmpty: () => { if (state.unit) selectUnit(null); },
         onViewChange: () => {},
+        onHeading: (deg) => { rose.style.transform = `rotate(${-deg}deg)`; },
     });
     $('scene-loading').classList.add('is-done');
     setTimeout(() => $('scene-loading').remove(), 600);
