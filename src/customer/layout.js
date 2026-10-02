@@ -1,5 +1,7 @@
 // Screen areas covered by floating UI, so views can fit/centre content in what's actually visible.
-export const isMobile = () => window.matchMedia('(max-width: 767px)').matches;
+// Portrait-phone layout (bottom sheets). Phones in landscape use side panels like desktop.
+export const isMobile = () => window.matchMedia('(max-width: 767px)').matches
+    && !window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches;
 
 export function getInsets({ withSheet = false } = {}) {
     const vh = window.innerHeight;

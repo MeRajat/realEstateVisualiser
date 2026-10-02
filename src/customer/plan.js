@@ -49,6 +49,17 @@ export function createPlanView(el) {
         .text(d => d.kind === 'common' ? d.id.replace(/ (ZONE|BLOCK)$/, '') : d.id);
 
     // ─── ZOOM ────────────────────────────────────────
+    // Frame the plotted area (plots, roads, small commons) rather than the whole boundary —
+    // the empty future-phase block would otherwise shrink every plot on a phone.
+    const framed = features.filter(f => f.kind === 'plot' || f.kind === 'road' || (f.kind === 'common' && f.box.w * f.box.h < 0.2 * boundary.box.w * boundary.box.h));
+    const fitBox = framed.reduce((b, f) => ({
+        minX: Math.min(b.minX, f.box.minX), minY: Math.min(b.minY, f.box.minY),
+        maxX: Math.max(b.maxX, f.box.maxX), maxY: Math.max(b.maxY, f.box.maxY),
+    }), { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
+    fitBox.w = fitBox.maxX - fitBox.minX + 24;
+    fitBox.h = fitBox.maxY - fitBox.minY + 24;
+    fitBox.minX -= 12;
+    fitBox.minY -= 12;
     const zoom = d3zoom().on('zoom', (e) => root.attr('transform', e.transform));
     svg.call(zoom).on('dblclick.zoom', null);
 
@@ -56,7 +67,7 @@ export function createPlanView(el) {
         const { top, bottom, left, right } = getInsets();
         const w = el.clientWidth - left - right;
         const h = el.clientHeight - top - bottom;
-        const b = boundary.box;
+        const b = fitBox;
         const k = Math.min(w / b.w, h / b.h);
         return zoomIdentity
             .translate(left + (w - b.w * k) / 2 - b.minX * k, top + (h - b.h * k) / 2 - b.minY * k)
@@ -83,9 +94,12 @@ export function createPlanView(el) {
     }
 
     // ─── INTERACTION ─────────────────────────────────
-    plotShapes.on('click', (event, d) => {
+    plotShapes.on('click', function (event, d) {
         event.stopPropagation();
+        // Too small to read comfortably on this screen? Bring it closer as it opens.
+        const r = this.getBoundingClientRect();
         selectPlot(d.id, 'plan');
+        if (Math.min(r.width, r.height) < 34) requestAnimationFrame(() => focus(d));
     });
     svg.on('click', () => { if (state.selectedId) selectPlot(null, 'plan'); });
 

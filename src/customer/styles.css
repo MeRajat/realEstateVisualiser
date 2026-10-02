@@ -326,7 +326,11 @@ small { font-size: 0.78em; }
 .modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .modal-head h2 { font-size: 20px; font-weight: 800; }
 .modal-head p { font-size: 13px; margin-top: 4px; line-height: 1.45; }
-.modal-foot { display: flex; gap: 8px; position: sticky; bottom: 0; }
+.modal-foot {
+    display: flex; gap: 8px; position: sticky; bottom: calc(-18px - var(--safe-bottom));
+    margin: 0 -18px calc(-18px - var(--safe-bottom)); padding: 12px 18px calc(18px + var(--safe-bottom));
+    background: var(--surface-solid); border-top: 1px solid var(--border);
+}
 .modal-foot .btn-primary { flex: 1; }
 
 fieldset { border: 0; }
@@ -395,8 +399,8 @@ legend { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; col
 .walk-hud { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
 .walk-hud > * { pointer-events: auto; }
 .walk-hint {
-    position: absolute; left: 50%; transform: translateX(-50%); top: calc(150px + var(--safe-top));
-    width: max-content; max-width: calc(100% - 32px); text-align: center;
+    position: absolute; left: 16px; top: calc(124px + var(--safe-top));
+    width: max-content; max-width: calc(100% - 90px); text-align: left;
     padding: 8px 14px; border-radius: 999px; font-size: 13px; color: #fff;
     background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(6px); pointer-events: none !important;
     animation: hint-fade 6s forwards;
@@ -417,7 +421,7 @@ body.is-walking #view-controls, body.is-walking #legend { display: none; }
     .walk-pad, .walk-exit { bottom: 110px; }
     .walk-pad { right: 24px; }
     .walk-exit { left: 24px; }
-    .walk-hint { top: 140px; }
+    .walk-hint { top: 140px; left: 50%; transform: translateX(-50%); max-width: 520px; text-align: center; }
 }
 
 /* ─── NEARBY PANEL + MAP MARKERS ─────────────────────── */
@@ -462,6 +466,51 @@ body.is-walking #view-controls, body.is-walking #legend { display: none; }
     background: var(--mint); color: var(--mint-ink); font-size: 11px; font-weight: 800; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 @media (max-width: 400px) { .hide-xs { display: none; } #nearby-btn { padding: 0 13px; } }
+
+/* ─── SMALL PHONES (≤ 380px) ─────────────────────────── */
+@media (max-width: 380px) {
+    .brand-text span { display: none; }
+    .brand h1 { font-size: 15px; }
+    .brand-mark { width: 30px; height: 30px; }
+    .top-stat { min-width: 46px; padding: 3px 6px; }
+    .top-stat b { font-size: 15px; }
+    .top-stat span { font-size: 9px; }
+    #toolbar { top: calc(56px + var(--safe-top)); }
+    #legend { top: calc(108px + var(--safe-top)); gap: 10px; font-size: 11px; }
+    #bottombar { left: 8px; right: 8px; gap: 6px; }
+    .seg { padding: 0 11px; }
+    .seg svg { display: none; }
+    .cta { height: 48px; padding: 0 16px; }
+    .chip-btn { padding: 0 13px; }
+    .facts b, .price-card b { font-size: 15px; white-space: normal; }
+    .sheet-head h2 { font-size: 23px; }
+}
+
+/* ─── PHONES IN LANDSCAPE ────────────────────────────── */
+@media (orientation: landscape) and (max-height: 500px) {
+    #topbar { padding-top: calc(6px + var(--safe-top)); padding-bottom: 6px; padding-left: max(16px, env(safe-area-inset-left)); }
+    .brand-text span, #legend, .hide-sm { display: none; }
+    #toolbar { top: 50px; left: max(12px, env(safe-area-inset-left)); right: auto; width: min(460px, calc(52vw - 32px)); }
+    .search, .chip-btn { height: 40px; }
+    #compass { top: 56px; }
+    #bottombar { left: 50%; right: auto; transform: translateX(-50%); bottom: calc(8px + var(--safe-bottom)); }
+    .seg { height: 38px; }
+    .cta { height: 44px; }
+    .sheet {
+        left: auto; right: max(8px, env(safe-area-inset-right)); top: 8px; bottom: 8px; width: min(380px, 48vw); max-height: none;
+        border-radius: var(--radius-lg); border-bottom: 1px solid var(--border-strong);
+        transform: translateX(calc(100% + 24px)); padding-bottom: 0;
+    }
+    .sheet.is-open { transform: translateX(0); }
+    .sheet.nearby { left: max(8px, env(safe-area-inset-left)); right: auto; transform: translateX(calc(-100% - 24px)); }
+    .sheet.nearby.is-open { transform: translateX(0); }
+    .sheet-grip { display: none; }
+    body:has(.sheet.is-open) #view-controls { display: none; }
+    /* keep the view switcher centred in the space left of an open panel */
+    body:has(#sheet.is-open) #bottombar { left: calc((100vw - min(380px, 48vw) - 16px) / 2); }
+    .walk-pad, .walk-exit { bottom: 64px; }
+    .walk-hint { top: 100px; }
+}
 
 /* ─── DESKTOP / TABLET ───────────────────────────────── */
 @media (min-width: 768px) {

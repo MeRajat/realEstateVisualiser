@@ -105,17 +105,6 @@ function buildLabelTexture(renderer) {
         ctx.moveTo(-len / 2 + 4, 0);
         ctx.lineTo(len / 2 - 4, 0);
         ctx.stroke();
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.font = '600 6px Outfit, system-ui, sans-serif';
-        const label = ` ${r.id} `;
-        const tw = ctx.measureText(label).width;
-        const step = Math.max(160, tw * 3);
-        for (let x = -len / 2 + step / 2; x < len / 2; x += step) {
-            ctx.fillStyle = '#2b302d';
-            ctx.fillRect(x - tw / 2, -3.5, tw, 7);
-            ctx.fillStyle = 'rgba(255,255,255,0.85)';
-            ctx.fillText(label, x, 0.3);
-        }
         ctx.restore();
     });
 
@@ -276,7 +265,6 @@ export function create3DView(el, { compass } = {}) {
             if (free(pt)) spots.push(pt);
         }
     });
-    props.treeSpots.forEach(([x, y]) => spots.push([x, y])); // scrub on the open land outside
     const canopy = new InstancedMesh(new IcosahedronGeometry(6, 0), new MeshLambertMaterial({ color: 0xffffff, flatShading: true }), spots.length);
     const trunk = new InstancedMesh(new CylinderGeometry(0.7, 1, 6, 5).translate(0, 3, 0), new MeshLambertMaterial({ color: 0x6b4f35 }), spots.length);
     const dummy = new Object3D();
@@ -298,6 +286,28 @@ export function create3DView(el, { compass } = {}) {
     trunk.castShadow = true;
     site.add(trunk, canopy);
 
+    // Scrub on the open land outside the wall: adds depth at eye level, but from above the real
+    // satellite photo already shows those trees, so it is only shown while walking.
+    const outside = props.treeSpots;
+    const outerCanopy = new InstancedMesh(canopy.geometry, canopy.material, outside.length);
+    const outerTrunk = new InstancedMesh(trunk.geometry, trunk.material, outside.length);
+    outside.forEach(([x, y, s], i) => {
+        dummy.position.set(x, 0, y);
+        dummy.scale.set(s, s, s);
+        dummy.rotation.y = rand() * Math.PI;
+        dummy.updateMatrix();
+        outerTrunk.setMatrixAt(i, dummy.matrix);
+        dummy.position.y = 9 * s;
+        dummy.scale.set(s * 1.3, s * 1.4, s * 1.3);
+        dummy.updateMatrix();
+        outerCanopy.setMatrixAt(i, dummy.matrix);
+        outerCanopy.setColorAt(i, tint.setHSL(0.24 + rand() * 0.08, 0.35, 0.24 + rand() * 0.1));
+    });
+    const outerTrees = new Group();
+    outerTrees.add(outerTrunk, outerCanopy);
+    outerTrees.visible = false;
+    site.add(outerTrees);
+
     // ─── STYLE / ANIMATION ───────────────────────────
     let needsRender = true;
     let raf = 0;
@@ -309,6 +319,7 @@ export function create3DView(el, { compass } = {}) {
     const WALK_TINT = { Available: 0x9fb36a, Sold: 0xa79a80, Reserved: 0xb9a36a };
     function stylePlots() {
         const walking = walk?.active;
+        outerTrees.visible = !!walking;
         plotMeshes.forEach(m => {
             const p = m.userData.plot;
             const selected = p.id === state.selectedId;
