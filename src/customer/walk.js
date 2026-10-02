@@ -66,10 +66,10 @@ function signAtlas(list) {
         ctx.lineWidth = 4;
         ctx.strokeRect(x + 2, y + 2, CW - 4, CH - 4);
         ctx.fillStyle = '#1b1b1b';
-        ctx.font = '800 30px Outfit, system-ui, sans-serif';
+        ctx.font = '800 30px Roboto, system-ui, sans-serif';
         ctx.fillText(p.id, x + CW / 2, y + 23);
         ctx.fillStyle = '#ffffff';
-        ctx.font = '700 11px Outfit, system-ui, sans-serif';
+        ctx.font = '700 11px Roboto, system-ui, sans-serif';
         ctx.fillText(p.status.toUpperCase(), x + CW / 2, y + CH - 8);
     });
     const tex = new CanvasTexture(canvas);
@@ -102,7 +102,7 @@ function gateSignTexture() {
     ctx.lineWidth = 8;
     ctx.strokeRect(8, 8, 1008, 112);
     ctx.fillStyle = '#f3e3b3';
-    ctx.font = '800 64px Outfit, system-ui, sans-serif';
+    ctx.font = '800 64px Roboto, system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(SITE.name.toUpperCase(), 512, 68);

@@ -28,16 +28,16 @@ export function toLatLng([x, y]) {
 
 // ─── ZONES (2×2 quadrant grid split by the main roads) ─
 export const ZONES = [
-    { id: 'A', name: 'Zone A', color: '#f2cc8f', x1: 50, y1: 292, x2: 415, y2: 610 },
-    { id: 'B', name: 'Zone B', color: '#81b29a', x1: 427, y1: 292, x2: 630, y2: 610 },
-    { id: 'C', name: 'Zone C', color: '#6fa8dc', x1: 50, y1: 622, x2: 415, y2: 910 },
-    { id: 'D', name: 'Zone D', color: '#e07a5f', x1: 427, y1: 622, x2: 630, y2: 910 },
+    { id: 'A', name: 'Zone A', color: '#4285f4', x1: 50, y1: 292, x2: 415, y2: 610 },
+    { id: 'B', name: 'Zone B', color: '#ea4335', x1: 427, y1: 292, x2: 630, y2: 610 },
+    { id: 'C', name: 'Zone C', color: '#fbbc04', x1: 50, y1: 622, x2: 415, y2: 910 },
+    { id: 'D', name: 'Zone D', color: '#34a853', x1: 427, y1: 622, x2: 630, y2: 910 },
 ];
 
 export const STATUS_COLORS = {
-    Available: '#4caf50',
-    Sold: '#7b8a83',
-    Reserved: '#c4a254',
+    Available: '#34a853',
+    Sold: '#9aa0a6',
+    Reserved: '#fbbc04',
 };
 
 // ─── GEOMETRY HELPERS ────────────────────────────────

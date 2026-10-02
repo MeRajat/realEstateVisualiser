@@ -6,7 +6,7 @@ import { state, on, selectPlot, matchesFilter } from './store.js';
 import { getInsets } from './layout.js';
 import { createNearbyLayer } from './nearby.js';
 
-const MAP_COLORS = { road: '#2b302d', common: '#3d7a3c', selected: '#2dd4bf', dim: '#1d2420' };
+const MAP_COLORS = { road: '#5f6368', common: '#34a853', selected: '#1a73e8', dim: '#3c4043' };
 
 export function createMapView(el, { opacitySlider } = {}) {
     const map = L.map(el, { zoomControl: false, attributionControl: true, zoomSnap: 0.25, maxZoom: 20 });
@@ -23,7 +23,7 @@ export function createMapView(el, { opacitySlider } = {}) {
     const areaLayers = []; // roads + green areas
 
     L.polygon(ll(boundary.points), {
-        color: '#d9cfb6', weight: 2.5, dashArray: '8 5', fill: false, interactive: false,
+        color: '#ffffff', weight: 2.5, dashArray: '8 5', fill: false, interactive: false,
     }).addTo(map);
 
     features.filter(f => f.kind === 'road' || f.kind === 'common').forEach(f => {

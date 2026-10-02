@@ -28,11 +28,11 @@ const C = {
     phase: 0x2f4a33,
     common: 0x3d7a3c,
     wall: 0xd9cfb6,
-    Available: 0x55b85a,
-    Sold: 0x8a948f,
-    Reserved: 0xc4a254,
-    selected: 0x2dd4bf,
-    dim: 0x313a35,
+    Available: 0x5bb974,   // Google Green 400
+    Sold: 0xbdc1c6,        // Google Grey 400
+    Reserved: 0xfbbc04,
+    selected: 0x1a73e8,    // Google Blue
+    dim: 0x9aa0a6,
 };
 
 function shapeOf(points) {
@@ -112,7 +112,7 @@ function buildLabelTexture(renderer) {
 
     plots.forEach(p => {
         const size = Math.max(7, Math.min(12, Math.min(p.box.w, p.box.h) * 0.42));
-        ctx.font = `700 ${size}px Outfit, system-ui, sans-serif`;
+        ctx.font = `700 ${size}px Roboto, system-ui, sans-serif`;
         ctx.fillStyle = 'rgba(8, 20, 12, 0.78)';
         ctx.fillText(p.id, p.center[0], p.center[1] + 0.5);
     });
@@ -425,7 +425,7 @@ export function create3DView(el, { compass } = {}) {
             const selected = p.id === state.selectedId;
             const match = matchesFilter(p);
             const color = walking
-                ? (selected ? 0x5fd3c0 : WALK_TINT[p.status] ?? WALK_TINT.Sold)
+                ? (selected ? 0x8ab4f8 : WALK_TINT[p.status] ?? WALK_TINT.Sold)
                 : selected ? C.selected : match ? C[p.status] ?? C.Sold : C.dim;
             m.material[0].color.setHex(color);
             m.material[1].color.setHex(color).multiplyScalar(0.62);

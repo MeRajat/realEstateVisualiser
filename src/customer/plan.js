@@ -119,6 +119,7 @@ export function createPlanView(el) {
     // ─── STATE SYNC ──────────────────────────────────
     on('select', ({ plot, source }) => {
         plotShapes.classed('is-selected', d => plot && d.id === plot.id);
+        labels.classed('is-selected', d => plot && d.kind === 'plot' && d.id === plot.id);
         if (plot) {
             plotShapes.filter(d => d.id === plot.id).raise();
             // next frame: the detail sheet is shown by another 'select' listener
