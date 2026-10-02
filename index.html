@@ -2,151 +2,154 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Greater Mansarovar — Interactive GIS Dashboard</title>
-    <!-- Google Fonts: Outfit -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-    <!-- Premium Stylesheet -->
-    <link rel="stylesheet" href="d3_plan.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0f0d">
+    <meta name="description" content="Explore available residential plots at The Greater Mansarovar — interactive site plan, 3D view and satellite map.">
+    <title>The Greater Mansarovar — Interactive Site Plan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232dd4bf'/><path d='M8 22V12l8-5 8 5v10h-6v-6h-4v6z' fill='%230b0f0d'/></svg>">
 </head>
 <body>
+    <!-- Views (one visible at a time) -->
+    <main id="stage">
+        <section class="view is-active" id="view-plan" aria-label="Site plan"></section>
+        <section class="view" id="view-3d" aria-label="3D model"></section>
+        <section class="view" id="view-map" aria-label="Satellite map"></section>
+        <div id="view-loading" class="view-loading" hidden><span class="spinner"></span>Loading…</div>
+    </main>
 
-    <!-- Unified Split Container -->
-    <div id="split-container" class="mode-d3">
-        <!-- D3 Site Plan Panel (Left) -->
-        <div id="d3-panel">
-            <div id="visualization"></div>
-            
-            <!-- Floating Zoom Controls for D3 Vector Plan -->
-            <div id="zoom-controls">
-                <button id="zoom-in" title="Zoom In">+</button>
-                <button id="zoom-reset" title="Reset View">⟲</button>
-                <button id="zoom-out" title="Zoom Out">−</button>
-            </div>
-        </div>
-
-        <!-- Real-World Satellite Map Panel (Right) -->
-        <div id="map-panel">
-            <div id="real-map"></div>
-            
-            <!-- Floating Opacity Slider overlaying Map -->
-            <div id="opacity-control">
-                <label for="opacity-slider">Overlay Opacity</label>
-                <input type="range" id="opacity-slider" min="0" max="100" value="70">
-            </div>
-        </div>
-    </div>
-
-    <!-- Floating Premium Header -->
-    <header id="floating-header">
+    <!-- Header -->
+    <header id="topbar">
         <div class="brand">
-            <div class="brand-icon">◈</div>
-            <div>
-                <h1>The Greater Mansarovar</h1>
-                <span class="brand-sub">Interactive GIS Dashboard</span>
+            <div class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3 20V10l9-6 9 6v10h-7v-6h-4v6z" fill="currentColor"/></svg>
+            </div>
+            <div class="brand-text">
+                <h1 id="site-name">The Greater Mansarovar</h1>
+                <span id="site-tagline">Residential Plots</span>
             </div>
         </div>
-
-        <!-- Segmented View Mode Toggle Controls -->
-        <div class="view-selector">
-            <button class="view-btn active" data-mode="d3">Site Plan</button>
-            <button class="view-btn" data-mode="map">Satellite Map</button>
-        </div>
-
-        <div class="header-actions">
-            <div class="header-stats">
-                <div class="stat">
-                    <span class="stat-value" id="stat-total">0</span>
-                    <span class="stat-label">Total Plots</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-value" id="stat-available">0</span>
-                    <span class="stat-label">Available</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-value" id="stat-sold">0</span>
-                    <span class="stat-label">Sold</span>
-                </div>
-            </div>
+        <div class="top-stats">
+            <div class="top-stat"><b id="stat-available">0</b><span>Available</span></div>
+            <div class="top-stat"><b id="stat-sold">0</b><span>Sold</span></div>
+            <div class="top-stat hide-sm"><b id="stat-total">0</b><span>Total plots</span></div>
         </div>
     </header>
 
-    <!-- Floating Beautiful Legend at the Bottom -->
-    <div id="floating-legend">
-        <div class="legend-item"><span class="legend-dot available"></span>Available</div>
-        <div class="legend-item"><span class="legend-dot sold"></span>Sold</div>
-        <div class="legend-item"><span class="legend-dot park"></span>Green Zone</div>
-        <div class="legend-item"><span class="legend-dot road"></span>Roads</div>
+    <!-- Search + filters -->
+    <div id="toolbar">
+        <form id="search-form" class="search" role="search" autocomplete="off">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input id="search-input" type="search" inputmode="numeric" placeholder="Find plot no." aria-label="Find plot number">
+        </form>
+        <button id="filter-btn" class="chip-btn" type="button" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Filters<span id="filter-count" class="badge" hidden>0</span>
+        </button>
     </div>
 
-    <!-- Floating Zone Filter Panel -->
-    <div id="zone-panel">
-        <div class="zone-panel-title">📍 Zones</div>
-        <div class="zone-btns">
-            <button class="zone-btn active" data-zone="all">All</button>
-            <button class="zone-btn zone-a" data-zone="A">Zone A</button>
-            <button class="zone-btn zone-b" data-zone="B">Zone B</button>
-            <button class="zone-btn zone-c" data-zone="C">Zone C</button>
-            <button class="zone-btn zone-d" data-zone="D">Zone D</button>
-        </div>
-        <div id="zone-stats" class="zone-stats hidden">
-            <div class="zone-stat-row">
-                <span class="zone-stat-label">Total</span>
-                <span class="zone-stat-value" id="zs-total">—</span>
-            </div>
-            <div class="zone-stat-row">
-                <span class="zone-stat-label">Available</span>
-                <span class="zone-stat-value" id="zs-available">—</span>
-            </div>
-            <div class="zone-stat-row">
-                <span class="zone-stat-label">Sold</span>
-                <span class="zone-stat-value" id="zs-sold">—</span>
-            </div>
-        </div>
+    <div id="legend" aria-label="Legend">
+        <span><i class="dot available"></i>Available</span>
+        <span><i class="dot sold"></i>Sold</span>
+        <span><i class="dot green"></i>Green / Common</span>
+        <span><i class="dot road"></i>Road</span>
     </div>
 
-    <!-- Floating Detail Card (initially hidden) -->
-    <div id="detail-card" class="card-hidden">
-        <button id="close-card">&times;</button>
-        <div class="card-badge" id="card-status-badge">Available</div>
-        <h2 id="card-plot-id">—</h2>
-        <!-- Plot diagram with dimension lines -->
-        <div id="plot-diagram"></div>
-        <!-- Facing direction badges -->
-        <div id="facing-badges"></div>
-        <div class="card-details">
-            <div class="card-row" id="row-dimensions">
-                <span class="card-label">Dimensions</span>
-                <span class="card-value" id="card-dimensions">—</span>
-            </div>
-            <div class="card-row">
-                <span class="card-label">Area (sq.ft)</span>
-                <span class="card-value" id="card-area">—</span>
-            </div>
-            <div class="card-row" id="row-sqyd">
-                <span class="card-label">Area (Gaj)</span>
-                <span class="card-value" id="card-area-sqyd">—</span>
-            </div>
-            <div class="card-row">
-                <span class="card-label">Estimated Price</span>
-                <span class="card-value" id="card-price">—</span>
-            </div>
-            <div class="card-row">
-                <span class="card-label">Status</span>
-                <span class="card-value" id="card-status">—</span>
-            </div>
-        </div>
-        <a id="directions-btn" href="#" target="_blank">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
-            Get Directions
-        </a>
+    <!-- Map / plan controls -->
+    <div id="view-controls">
+        <button type="button" data-action="zoom-in" aria-label="Zoom in">+</button>
+        <button type="button" data-action="zoom-out" aria-label="Zoom out">−</button>
+        <button type="button" data-action="reset" aria-label="Reset view">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+    </div>
+    <div id="compass" aria-hidden="true"><span>N</span></div>
+    <div id="opacity-control" hidden>
+        <label for="opacity-slider">Plan overlay</label>
+        <input type="range" id="opacity-slider" min="0" max="100" value="65">
     </div>
 
-    <!-- D3.js, Leaflet and Dashboard Logic -->
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="d3_plan.js"></script>
+    <!-- Bottom bar -->
+    <nav id="bottombar">
+        <div class="segmented" role="tablist" aria-label="View mode">
+            <button role="tab" class="seg is-active" data-view="plan" aria-selected="true">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M3 3h18v18H3zM3 12h18M12 3v18" fill="none" stroke="currentColor" stroke-width="2"/></svg>Plan</button>
+            <button role="tab" class="seg" data-view="3d" aria-selected="false">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m12 3 9 5v8l-9 5-9-5V8zM12 13l9-5M12 13 3 8M12 13v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>3D</button>
+            <button role="tab" class="seg" data-view="map" aria-selected="false">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.5" fill="currentColor"/></svg>Map</button>
+        </div>
+        <button id="enquire-btn" class="cta" type="button">Enquire</button>
+    </nav>
+
+    <!-- Plot detail sheet -->
+    <aside id="sheet" class="sheet" aria-live="polite" hidden>
+        <div class="sheet-grip" aria-hidden="true"></div>
+        <button class="icon-btn sheet-close" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <div id="sheet-body"></div>
+    </aside>
+
+    <!-- Filters dialog -->
+    <dialog id="filters-dialog" class="modal">
+        <form method="dialog" class="modal-card" id="filters-form">
+            <header class="modal-head">
+                <h2>Filter plots</h2>
+                <button class="icon-btn" value="cancel" aria-label="Close">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </header>
+            <fieldset><legend>Status</legend><div class="pills" data-filter="status"></div></fieldset>
+            <fieldset><legend>Zone</legend><div class="pills" data-filter="zone"></div></fieldset>
+            <fieldset><legend>Plot size</legend><div class="pills" data-filter="size"></div></fieldset>
+            <fieldset><legend>Facing</legend><div class="pills" data-filter="facing"></div></fieldset>
+            <footer class="modal-foot">
+                <button type="button" class="btn-ghost" id="filters-reset">Reset</button>
+                <button class="btn-primary" value="apply" id="filters-apply">Show plots</button>
+            </footer>
+        </form>
+    </dialog>
+
+    <!-- Lead capture dialog -->
+    <dialog id="lead-dialog" class="modal">
+        <form class="modal-card" id="lead-form" novalidate>
+            <header class="modal-head">
+                <div>
+                    <h2 id="lead-title">Unlock price &amp; details</h2>
+                    <p class="muted" id="lead-sub">Share your number to see prices, plot dimensions and get a call back from our team.</p>
+                </div>
+                <button type="button" class="icon-btn" data-close aria-label="Close">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </header>
+            <label class="field">
+                <span>Your name</span>
+                <input name="name" autocomplete="name" required minlength="2" maxlength="60" placeholder="Full name">
+            </label>
+            <label class="field">
+                <span>Mobile number</span>
+                <div class="phone-input">
+                    <span>+91</span>
+                    <input name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" required maxlength="14" placeholder="98765 43210">
+                </div>
+            </label>
+            <label class="field" id="lead-plot-field" hidden>
+                <span>Interested in</span>
+                <input name="plotId" readonly>
+            </label>
+            <!-- Honeypot: invisible to people, bots tend to fill it -->
+            <input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <p class="form-error" id="lead-error" role="alert" hidden></p>
+            <button class="btn-primary block" type="submit" id="lead-submit">Continue</button>
+            <p class="fineprint">By continuing you agree to be contacted by our sales team about this project. We never share your number.</p>
+        </form>
+    </dialog>
+
+    <div id="toast" role="status" hidden></div>
+
+    <script type="module" src="/src/customer/main.js"></script>
 </body>
 </html>

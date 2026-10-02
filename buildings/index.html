@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0f0d">
+    <meta name="description" content="Explore apartments in 3D — pick your home, see the view from your window, check the floor plan, amenities and price per sq.ft.">
+    <title>Mansarovar Heights — 3D Apartment Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232dd4bf'/><path d='M9 25V9h6v16M17 25V5h6v20M7 25h18' stroke='%230b0f0d' stroke-width='2.4' fill='none'/></svg>">
+</head>
+<body>
+    <main id="stage">
+        <div id="scene" aria-label="3D society model"></div>
+        <div id="scene-loading" class="scene-loading">
+            <div class="loader-towers" aria-hidden="true"><i></i><i></i><i></i></div>
+            <span>Building your 3D tour…</span>
+        </div>
+    </main>
+
+    <header id="topbar">
+        <div class="brand">
+            <div class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 21V8h5v13M14 21V3h5v18M3 21h18" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="brand-text">
+                <h1 id="society-name">Mansarovar Heights</h1>
+                <span id="society-tagline"></span>
+            </div>
+        </div>
+        <div class="top-stats">
+            <div class="top-stat"><b id="stat-rate">—</b><span>From / sq.ft</span></div>
+            <div class="top-stat"><b id="stat-available">0</b><span>Homes available</span></div>
+        </div>
+    </header>
+
+    <div id="chips" class="chips" role="toolbar" aria-label="Quick filters"></div>
+
+    <div id="legend" aria-label="Legend">
+        <span><i class="dot available"></i>Available</span>
+        <span><i class="dot booked"></i>Booked</span>
+        <span><i class="dot sold"></i>Sold</span>
+    </div>
+
+    <div id="side-controls">
+        <div class="ctrl-stack">
+            <button type="button" data-action="zoom-in" aria-label="Zoom in">+</button>
+            <button type="button" data-action="zoom-out" aria-label="Zoom out">−</button>
+            <button type="button" data-action="reset" aria-label="Reset view">
+                <svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+        </div>
+        <div class="floor-cut" title="Slice the towers to see a floor">
+            <span class="floor-cut-label">Floors</span>
+            <div class="floor-cut-track">
+                <input type="range" id="floor-cut" min="1" max="16" value="16" aria-label="Show floors up to">
+            </div>
+            <output id="floor-cut-value" for="floor-cut">All</output>
+        </div>
+    </div>
+
+    <nav id="bottombar">
+        <button id="amenities-btn" class="pill-btn" type="button">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M2 18c2 0 2-1.5 4-1.5S8 18 10 18s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5M7 15V5a2 2 0 0 1 4 0M13 15V5a2 2 0 0 1 4 0M7 9h6M7 12h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Amenities
+        </button>
+        <button id="enquire-btn" class="cta" type="button">Enquire</button>
+    </nav>
+
+    <!-- Apartment view-mode bar -->
+    <div id="viewbar" hidden>
+        <div class="viewbar-info">
+            <span class="eyebrow">View from</span>
+            <strong id="viewbar-title">—</strong>
+            <span id="viewbar-sub" class="muted"></span>
+        </div>
+        <div class="viewbar-actions">
+            <button type="button" class="icon-btn" id="view-up" aria-label="One floor up">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path d="m6 15 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </button>
+            <button type="button" class="icon-btn" id="view-down" aria-label="One floor down">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </button>
+            <button type="button" class="btn-primary" id="view-exit">Exit view</button>
+        </div>
+    </div>
+    <div id="view-hint" hidden>Drag to look around · pinch to zoom</div>
+
+    <aside id="sheet" class="sheet" aria-live="polite" hidden>
+        <div class="sheet-grip" aria-hidden="true"></div>
+        <button class="icon-btn sheet-close" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <div id="sheet-body"></div>
+    </aside>
+
+    <dialog id="filters-dialog" class="modal">
+        <form method="dialog" class="modal-card" id="filters-form">
+            <header class="modal-head">
+                <h2>Find your home</h2>
+                <button class="icon-btn" value="cancel" aria-label="Close">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </header>
+            <div id="filter-groups"></div>
+            <footer class="modal-foot">
+                <button type="button" class="btn-ghost" id="filters-reset">Reset</button>
+                <button class="btn-primary" value="apply" id="filters-apply">Show homes</button>
+            </footer>
+        </form>
+    </dialog>
+
+    <dialog id="lead-dialog" class="modal">
+        <form class="modal-card" id="lead-form" novalidate>
+            <header class="modal-head">
+                <div>
+                    <h2 id="lead-title">Unlock price &amp; details</h2>
+                    <p class="muted" id="lead-sub">Share your number to see the exact price of every apartment and get a call back from our team.</p>
+                </div>
+                <button type="button" class="icon-btn" data-close aria-label="Close">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </header>
+            <label class="field">
+                <span>Your name</span>
+                <input name="name" autocomplete="name" required minlength="2" maxlength="60" placeholder="Full name">
+            </label>
+            <label class="field">
+                <span>Mobile number</span>
+                <div class="phone-input">
+                    <span>+91</span>
+                    <input name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" required maxlength="14" placeholder="98765 43210">
+                </div>
+            </label>
+            <label class="field" id="lead-unit-field" hidden>
+                <span>Interested in</span>
+                <input name="unit" readonly>
+            </label>
+            <p class="form-error" id="lead-error" role="alert" hidden></p>
+            <button class="btn-primary block" type="submit" id="lead-submit">Continue</button>
+            <p class="fineprint">By continuing you agree to be contacted by our sales team about this project. We never share your number.</p>
+        </form>
+    </dialog>
+
+    <div id="toast" role="status" hidden></div>
+
+    <script type="module" src="/src/buildings/main.js"></script>
+</body>
+</html>
