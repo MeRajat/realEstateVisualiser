@@ -1,6 +1,41 @@
 // Plot detail sheet content (bottom sheet on mobile, side panel on desktop).
 import { plots, formatPrice, ZONES } from '../shared/site.js';
 import { SIZE_BUCKETS } from './store.js';
+import { generateHouseLayout } from '../shared/house-layout.js';
+import { renderHousePlan } from './houseplan.js';
+
+const layoutCache = new Map();
+export function houseLayoutFor(p) {
+    if (!layoutCache.has(p.id)) layoutCache.set(p.id, generateHouseLayout(p));
+    return layoutCache.get(p.id);
+}
+
+export function renderLayoutFloor(p, floorId) {
+    const layout = houseLayoutFor(p);
+    return renderHousePlan(layout, floorId, { roadName: layout.roadName });
+}
+
+function layoutBlock(p) {
+    if (!p.dims) return '';
+    const L = houseLayoutFor(p);
+    return `<section class="layout-block">
+        <div class="layout-head">
+            <h3>Possible house on this plot</h3>
+            <span class="layout-badge">${L.bedrooms} BHK duplex</span>
+        </div>
+        <p class="layout-sum">≈ ${fmt(L.builtUp)} sq.ft built-up on 2 floors · setbacks ${L.setbacks.front}' front, ${L.setbacks.rear}' rear</p>
+        <div class="layout-tabs" role="tablist">
+            <button type="button" role="tab" class="is-active" aria-selected="true" data-action="layout-floor" data-floor="ground">Ground floor</button>
+            <button type="button" role="tab" aria-selected="false" data-action="layout-floor" data-floor="first">First floor</button>
+        </div>
+        <div class="layout-sheet">${renderLayoutFloor(p, 'ground')}</div>
+        <ul class="vastu">${L.vastu.map(v => `<li class="${v.ok ? 'ok' : ''}">${v.ok ? '✓' : '•'} ${esc(v.text)}</li>`).join('')}</ul>
+        <button type="button" class="btn-ghost block" data-action="house-3d">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m12 3 9 5v8l-9 5-9-5V8zM12 13l9-5M12 13 3 8M12 13v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+            See this house in 3D</button>
+        <p class="fineprint">Indicative layout for illustration. Final design and approvals as per JDA building rules with your architect.</p>
+    </section>`;
+}
 
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = (n) => n.toLocaleString('en-IN');
@@ -77,7 +112,8 @@ export function renderSheet(p, { unlocked }) {
                 ${ppsf ? `<div><span>Rate</span><b>₹${fmt(ppsf)}<small>/sq.ft</small></b></div>` : ''}
                 ${p.dims ? `<div><span>Size</span><b>${p.dims.w} × ${p.dims.h}<small> ft</small></b></div>` : ''}
            </div>
-           ${diagram(p)}`
+           ${diagram(p)}
+           ${layoutBlock(p)}`
         : `<div class="locked">
                 <div class="locked-preview" aria-hidden="true">
                     <div><span>Price</span><b>₹ •• Lakhs</b></div>

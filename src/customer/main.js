@@ -6,7 +6,7 @@ import {
 } from './store.js';
 import { trackVisit, trackPlotView, track, submitLead } from './api.js';
 import { createPlanView } from './plan.js';
-import { renderSheet } from './sheet.js';
+import { renderSheet, renderLayoutFloor } from './sheet.js';
 import { isMobile } from './layout.js';
 
 const $ = (id) => document.getElementById(id);
@@ -147,6 +147,20 @@ sheetBody.addEventListener('click', async (e) => {
             break;
         case 'directions':
             track('enquire', { plotId: plot.id });
+            break;
+        case 'layout-floor': {
+            const floor = btn.dataset.floor;
+            btn.parentElement.querySelectorAll('[data-floor]').forEach(b => {
+                b.classList.toggle('is-active', b === btn);
+                b.setAttribute('aria-selected', b === btn);
+            });
+            sheetBody.querySelector('.layout-sheet').innerHTML = renderLayoutFloor(plot, floor);
+            break;
+        }
+        case 'house-3d':
+            track('view_mode', { mode: 'house' });
+            await showView('3d');
+            views['3d']?.showHouse(plot);
             break;
     }
 });

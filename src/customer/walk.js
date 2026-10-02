@@ -9,6 +9,7 @@ import {
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { features, plots, boundary, GEO, SITE } from '../shared/site.js';
 import nearby from '../shared/nearby.json';
+import { chooseFacing } from '../shared/house-layout.js';
 
 const EYE = 5.6;           // ft above the road surface
 const WALK_SPEED = 16;     // ft/s for tap-to-move and held buttons
@@ -333,18 +334,26 @@ export function createWalk({ el, renderer, camera, controls, site, plotMeshes, g
         return true;
     }
 
-    // Stand on the road in front of a plot, facing it
-    function visitPlot(p) {
-        const f = p.facing[0]?.dir || 'South';
+    // Stand on the road in front of a plot, facing it (further back, looking up a little, to take in a house)
+    function visitPlot(p, { distance = 14, lookUp = 0 } = {}) {
+        const f = chooseFacing(p); // the road the suggested house faces
         const [cx, cy] = p.center;
         const b = p.box;
-        // a few feet off-centre so a street light / the board post isn't right in your face
-        const stand = {
-            North: [cx + 5, b.minY - 14], South: [cx + 5, b.maxY + 14], East: [b.maxX + 14, cy + 5], West: [b.minX - 14, cy + 5],
-        }[f];
+        // Straight back from the plot if there is room; otherwise stand on the road off to one
+        // side so the house is seen at an angle (a wall or plots may be right behind you)
+        const out = { North: [0, -1], South: [0, 1], East: [1, 0], West: [-1, 0] }[f];
+        const edge = { North: [cx, b.minY], South: [cx, b.maxY], East: [b.maxX, cy], West: [b.minX, cy] }[f];
+        const along = [Math.abs(out[1]), Math.abs(out[0])];
+        const candidates = [
+            [edge[0] + out[0] * distance + along[0] * 5, edge[1] + out[1] * distance + along[1] * 5],
+            ...(distance > 14 ? [35, -35, 22, -22].map(o => [edge[0] + out[0] * 8 + along[0] * o, edge[1] + out[1] * 8 + along[1] * o]) : []),
+            [edge[0] + out[0] * 14 + along[0] * 5, edge[1] + out[1] * 14 + along[1] * 5],
+        ];
+        const stand = candidates.find(walkable) || candidates[candidates.length - 1];
         const yaw = Math.atan2(-(cx - stand[0]), -(cy - stand[1]));
         if (!state.active) enter(stand);
         walkTo(stand, yaw);
+        state.pitch = lookUp;
     }
 
     // ─── Input ───────────────────────────────────────

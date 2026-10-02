@@ -12,6 +12,8 @@ import { features, plots, boundary, GEO } from '../shared/site.js';
 import { state, on, selectPlot, matchesFilter } from './store.js';
 import { satelliteGround, createSky } from '../shared/geo3d.js';
 import { buildProps, createWalk } from './walk.js';
+import { houseLayoutFor } from './sheet.js';
+import { localToPlan } from '../shared/house-layout.js';
 
 const PLOT_H = 3;
 const LIFT = 5;
@@ -308,6 +310,104 @@ export function create3DView(el, { compass } = {}) {
     outerTrees.visible = false;
     site.add(outerTrees);
 
+    // ─── "SEE THIS HOUSE" — massing model of the suggested layout on its plot ───
+    const HOUSE_MAT = {
+        wall: new MeshLambertMaterial({ color: 0xefe3cf }),
+        band: new MeshLambertMaterial({ color: 0xfbfaf6 }),
+        glass: new MeshLambertMaterial({ color: 0x33424d }),
+        door: new MeshLambertMaterial({ color: 0x6b4226 }),
+        rail: new MeshLambertMaterial({ color: 0x8d949a }),
+        car: new MeshLambertMaterial({ color: 0xb23a3a }),
+        boundary: new MeshLambertMaterial({ color: 0xd8cbb3 }),
+    };
+    let house = null;
+
+    function buildHouse(plot) {
+        const L = houseLayoutFor(plot);
+        const g = new Group();
+        g.userData.plotId = plot.id;
+        const planRect = (r) => {
+            const a = localToPlan(plot, r.x, r.y);
+            const b = localToPlan(plot, r.x + r.w, r.y + r.h);
+            return { minX: Math.min(a[0], b[0]), maxX: Math.max(a[0], b[0]), minY: Math.min(a[1], b[1]), maxY: Math.max(a[1], b[1]) };
+        };
+        const box = (r, y0, h, mat, grow = 0) => {
+            const R = planRect(r);
+            const m = new Mesh(new BoxGeometry(R.maxX - R.minX + grow * 2, h, R.maxY - R.minY + grow * 2), mat);
+            m.position.set((R.minX + R.maxX) / 2, y0 + h / 2, (R.minY + R.maxY) / 2);
+            m.castShadow = true;
+            m.receiveShadow = true;
+            g.add(m);
+            return m;
+        };
+        const FH = 10.5; // floor-to-floor height (ft)
+        const H = L.house;
+        box(H, 0, FH, HOUSE_MAT.wall);
+        box(H, FH, 0.9, HOUSE_MAT.band, 0.7);
+        box(H, FH + 0.9, FH - 0.6, HOUSE_MAT.wall);
+        box(H, FH * 2 + 0.3, 0.8, HOUSE_MAT.band, 0.7);
+        box(H, FH * 2 + 1.1, 3, HOUSE_MAT.wall); // parapet
+        const ground = L.floors[0].rooms;
+        const stairs = ground.find(r => r.kind === 'stairs');
+        if (stairs) box(stairs, FH * 2 + 1.1, 8.5, HOUSE_MAT.wall); // stair room on the roof
+        // Windows on all four walls of both floors (evenly spaced), then the main door
+        const hr = planRect(H);
+        const addWindows = (base) => {
+            const glass = (x, z, w, d) => {
+                const m = new Mesh(new BoxGeometry(w, 4.4, d), HOUSE_MAT.glass);
+                m.position.set(x, base + 3.2 + 2.2, z);
+                g.add(m);
+            };
+            const along = (len) => {
+                const n = Math.max(1, Math.floor(len / 9));
+                return Array.from({ length: n }, (_, i) => (i + 0.5) / n);
+            };
+            const wx = hr.maxX - hr.minX, wz = hr.maxY - hr.minY;
+            along(wx).forEach(f => {
+                glass(hr.minX + f * wx, hr.minY - 0.15, Math.min(4.5, wx / 3), 0.4);
+                glass(hr.minX + f * wx, hr.maxY + 0.15, Math.min(4.5, wx / 3), 0.4);
+            });
+            along(wz).forEach(f => {
+                glass(hr.minX - 0.15, hr.minY + f * wz, 0.4, Math.min(4.5, wz / 3));
+                glass(hr.maxX + 0.15, hr.minY + f * wz, 0.4, Math.min(4.5, wz / 3));
+            });
+        };
+        addWindows(0);
+        addWindows(FH + 0.9);
+        const living = ground.find(r => r.door);
+        if (living) box({ x: living.x + living.w * 0.22 - 2, y: H.y - 0.4, w: 4, h: 0.4 }, 0, 7.4, HOUSE_MAT.door);
+        const balcony = L.floors[1].rooms.find(r => r.kind === 'balcony');
+        if (balcony) {
+            box(balcony, FH, 0.7, HOUSE_MAT.band);
+            box({ x: balcony.x, y: balcony.y, w: balcony.w, h: 0.3 }, FH + 0.7, 3.4, HOUSE_MAT.rail);
+        }
+        const parking = L.outdoor.find(o => o.kind === 'parking');
+        if (parking) {
+            const cw = Math.min(parking.w * 0.55, 6.2), cl = Math.min(parking.h * 0.8, 14);
+            box({ x: parking.x + parking.w / 2 - cw / 2, y: parking.y + parking.h / 2 - cl / 2, w: cw, h: cl }, 0, 3.4, HOUSE_MAT.car);
+            box({ x: parking.x + parking.w / 2 - cw * 0.4, y: parking.y + parking.h / 2 - cl * 0.25, w: cw * 0.8, h: cl * 0.5 }, 3.4, 1.8, HOUSE_MAT.glass);
+        }
+        // Low boundary wall on the three non-road sides
+        const F = L.frontage, D = L.depth;
+        [[0, D - 0.5, F, 0.5], [0, 0, 0.5, D], [F - 0.5, 0, 0.5, D]].forEach(([x, y, w, h]) => box({ x, y, w, h }, 0, 4, HOUSE_MAT.boundary));
+        return g;
+    }
+
+    function showHouse(plot) {
+        if (house) { site.remove(house); house.traverse(o => o.geometry?.dispose()); }
+        house = buildHouse(plot);
+        site.add(house);
+        if (state.selectedId !== plot.id) selectPlot(plot.id, 'ui');
+        else stylePlots();
+        needsRender = true;
+        if (walk.active) walk.visitPlot(plot, { distance: 42, lookUp: 0.18 });
+        else {
+            const target = new Vector3(plot.center[0] - GEO.centerX, 8, plot.center[1] - GEO.centerY);
+            flyTo(target, 150, 1100);
+        }
+        start();
+    }
+
     // ─── STYLE / ANIMATION ───────────────────────────
     let needsRender = true;
     let raf = 0;
@@ -329,7 +429,8 @@ export function create3DView(el, { compass } = {}) {
                 : selected ? C.selected : match ? C[p.status] ?? C.Sold : C.dim;
             m.material[0].color.setHex(color);
             m.material[1].color.setHex(color).multiplyScalar(0.62);
-            m.userData.y = selected && !walking ? LIFT : 0;
+            // a plot showing its house stays level so the house sits on the ground with its neighbours
+            m.userData.y = selected && !walking && house?.userData.plotId !== p.id ? LIFT : 0;
             m.userData.h = walking ? 0.12 : match || selected ? 1 : 0.25;
         });
         needsRender = true;
@@ -338,6 +439,10 @@ export function create3DView(el, { compass } = {}) {
 
     function animatePlots() {
         let moving = false;
+        if (house) {
+            const pm = plotMeshes.find(m => m.userData.plot.id === house.userData.plotId);
+            if (pm) house.position.y = pm.position.y + PLOT_H * pm.scale.y;
+        }
         plotMeshes.forEach(m => {
             const { y, h } = m.userData;
             if (Math.abs(m.position.y - y) > 0.01 || Math.abs(m.scale.y - h) > 0.005) {
@@ -526,5 +631,6 @@ export function create3DView(el, { compass } = {}) {
             if (walk.active) walk.exit();
             reset();
         },
+        showHouse,
     };
 }

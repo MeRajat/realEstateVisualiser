@@ -286,6 +286,44 @@ small { font-size: 0.78em; }
 .dg-id { fill: var(--muted); font-size: 14px; font-weight: 800; text-anchor: middle; dominant-baseline: central; }
 .dg-north { fill: var(--faint); font-size: 9px; font-weight: 700; text-anchor: end; }
 
+/* ─── POSSIBLE HOUSE LAYOUT ──────────────────────────── */
+.layout-block { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+.layout-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.layout-head h3 { font-size: 16px; font-weight: 700; }
+.layout-badge { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(45, 212, 191, 0.14); color: var(--mint); white-space: nowrap; }
+.layout-sum { font-size: 13px; color: var(--muted); }
+.layout-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); }
+.layout-tabs button { flex: 1; min-height: 38px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--muted); }
+.layout-tabs button.is-active { background: rgba(45, 212, 191, 0.16); color: var(--mint); }
+.layout-sheet { border-radius: 12px; overflow: hidden; background: #fbfaf7; }
+.house-plan { display: block; width: 100%; height: auto; max-height: 62vh; font-family: 'Outfit', system-ui, sans-serif; }
+.hp-paper { fill: #fbfaf7; }
+.hp-road { fill: #3a3f3c; }
+.hp-road-t { fill: #e9ece9; text-anchor: middle; dominant-baseline: central; font-weight: 700; letter-spacing: 0.06em; }
+.hp-plot { fill: #f0eee7; stroke: #8f8a7e; stroke-width: 0.35; stroke-dasharray: 1.4 1; }
+.hp-out { stroke: #c9c3b6; stroke-width: 0.2; }
+.hp-parking { fill: #e7e5df; }
+.hp-garden { fill: #dfeed7; }
+.hp-car { fill: none; stroke: #9a948a; stroke-width: 0.3; }
+.hp-room { stroke: #4a4f4c; stroke-width: 0.28; }
+.hp-walls { fill: none; stroke: #2a2d2b; stroke-width: 0.75; }
+.hp-name { fill: #2a2d2b; text-anchor: middle; dominant-baseline: central; font-weight: 700; }
+.hp-name.hp-on { fill: #5f6368; }
+.hp-size { fill: #6b6f6c; text-anchor: middle; dominant-baseline: central; font-weight: 500; }
+.hp-step { stroke: #b9b9b9; stroke-width: 0.15; }
+.hp-arrow { stroke: #5f6368; stroke-width: 0.22; }
+.hp-door { fill: #fbfaf7; }
+.hp-swing { fill: none; stroke: #8f8a7e; stroke-width: 0.18; stroke-dasharray: 0.5 0.4; }
+.hp-dim { stroke: #8f8a7e; stroke-width: 0.18; }
+.hp-dim-t { fill: #5f6368; text-anchor: middle; font-weight: 600; }
+.hp-north-c { fill: #fff; stroke: #c9c3b6; stroke-width: 0.2; }
+.hp-north { fill: #d93025; }
+.hp-north-t { fill: #2a2d2b; text-anchor: middle; dominant-baseline: central; font-weight: 800; }
+.vastu { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.vastu li { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); }
+.vastu li.ok { color: #9ae6a0; border-color: rgba(76, 175, 80, 0.35); background: rgba(76, 175, 80, 0.1); }
+.layout-block .fineprint { text-align: left; }
+
 .similar { margin: 12px 0 0; padding: 12px; border-radius: 12px; background: rgba(196, 162, 84, 0.08); border: 1px solid rgba(196, 162, 84, 0.25); }
 .similar p { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
 .similar-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
