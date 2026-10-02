@@ -324,6 +324,7 @@ body[data-view='map'] #view-controls .map-only { display: grid !important; }
 .hp-swing { fill: none; stroke: #8f8a7e; stroke-width: 0.18; stroke-dasharray: 0.5 0.4; }
 .hp-dim { stroke: #8f8a7e; stroke-width: 0.18; }
 .hp-dim-t { fill: #5f6368; text-anchor: middle; font-weight: 600; }
+.hp-side { fill: #1a73e8; text-anchor: middle; dominant-baseline: central; font-weight: 700; letter-spacing: 0.08em; }
 .hp-north-c { fill: #fff; stroke: #c9c3b6; stroke-width: 0.2; }
 .hp-north { fill: #d93025; }
 .hp-north-t { fill: #2a2d2b; text-anchor: middle; dominant-baseline: central; font-weight: 800; }

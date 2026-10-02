@@ -294,6 +294,7 @@ button:disabled { opacity: 0.4; cursor: default; }
 .fp-dim { fill: #9fb0a7; text-anchor: middle; }
 .fp-measure { stroke: #7d8c84; stroke-width: 0.2; }
 .fp-measure-text { fill: #a7b4ad; font-size: 1.4px; text-anchor: middle; }
+.fp-side { fill: #e8f0fe; font-size: 1.35px; font-weight: 700; text-anchor: middle; dominant-baseline: central; letter-spacing: 0.08px; }
 .fp-front { fill: #75847c; font-size: 1.1px; text-anchor: middle; letter-spacing: 0.05px; }
 .fp-compass circle { fill: rgba(45, 212, 191, 0.1); stroke: rgba(45, 212, 191, 0.6); stroke-width: 0.2; }
 .fp-compass path { fill: var(--mint); }
@@ -533,3 +534,86 @@ legend { font-size: 12px; color: var(--text-3); text-transform: uppercase; lette
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ─── NEARBY PLACE PINS IN 3D ────────────────────────── */
+.place-layer { position: absolute; inset: 0; pointer-events: none; z-index: 4; overflow: hidden; }
+.place-pin { position: absolute; left: 0; top: 0; will-change: transform; }
+.pp-stem { position: absolute; left: -1px; top: 0; width: 2px; background: linear-gradient(var(--c), rgba(255, 255, 255, 0.4)); border-radius: 1px; }
+.pp-head {
+    position: absolute; left: -16px; bottom: 0; pointer-events: auto;
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 3px; border-radius: 999px;
+    background: #ffffff; color: #202124; box-shadow: 0 1px 3px rgba(60, 64, 67, 0.35), 0 2px 8px rgba(60, 64, 67, 0.2);
+    white-space: nowrap; font: 500 12px/1.2 'Roboto', 'Outfit', system-ui, sans-serif; text-align: left; cursor: pointer;
+}
+.pp-icon { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--c); color: #fff; flex: none; }
+.pp-icon svg { width: 15px; height: 15px; }
+.pp-text { display: flex; flex-direction: column; }
+.pp-text b { font-weight: 500; font-size: 12px; }
+.pp-text small { font-size: 11px; color: #5f6368; }
+.place-pin.is-dot .pp-head { padding: 3px; }
+.place-pin.is-dot .pp-text { display: none; }
+.place-pin.is-dot .pp-icon { width: 20px; height: 20px; }
+.place-pin.is-dot .pp-icon svg { width: 12px; height: 12px; }
+.place-pin.is-dot .pp-head { left: -13px; }
+body.map-open .place-layer { display: none; }
+.pp-arrow { display: none; }
+.place-pin.is-edge .pp-head { bottom: auto; top: -16px; padding: 3px; gap: 2px; background: rgba(255, 255, 255, 0.94); }
+.place-pin.is-edge .pp-text { display: none; }
+.place-pin.edge-left .pp-head { left: 0; }
+.place-pin.edge-right .pp-head { left: auto; right: 0; flex-direction: row-reverse; }
+.place-pin.is-edge .pp-arrow { display: block; width: 0; height: 0; border: 6px solid transparent; }
+.place-pin.edge-left .pp-arrow { border-right: 8px solid #5f6368; border-left: 0; order: -1; margin-left: 4px; }
+.place-pin.edge-right .pp-arrow { border-left: 8px solid #5f6368; border-right: 0; order: -1; margin-right: 4px; }
+.place-pin.edge-left .pp-arrow { margin-right: 2px; }
+
+/* ─── PLACE CARD + NEARBY ROWS ───────────────────────── */
+.place-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.place-ic { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--c); color: #fff; }
+.place-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+.place-facts > div { padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); }
+.place-facts span { display: block; font-size: 11px; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; }
+.place-facts b { font-size: 17px; }
+.place-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.place-actions > * { flex: 1 1 140px; justify-content: center; text-align: center; text-decoration: none; }
+.near-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; text-align: left; color: inherit; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
+
+/* ─── MAP OVERLAY ────────────────────────────────────── */
+#map-overlay { position: fixed; inset: 0; z-index: 40; background: #e8eaed; }
+#map-overlay.is-loading::after { content: 'Loading map…'; position: absolute; inset: 0; display: grid; place-items: center; color: #5f6368; font: 500 15px 'Roboto', system-ui, sans-serif; }
+.mo-map { position: absolute; inset: 0; }
+.mo-bar {
+    position: absolute; z-index: 500; left: 12px; right: 12px; top: calc(12px + var(--safe-t));
+    display: flex; justify-content: space-between; gap: 8px; pointer-events: none;
+}
+.mo-btn {
+    pointer-events: auto; display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 18px; border-radius: 999px;
+    background: #ffffff; color: #1a73e8; border: 0; font: 500 15px 'Roboto', system-ui, sans-serif; text-decoration: none;
+    box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15); cursor: pointer;
+}
+.mo-btn.mo-primary { background: #1a73e8; color: #ffffff; }
+.mo-controls {
+    position: absolute; z-index: 500; right: 12px; bottom: calc(24px + var(--safe-b));
+    display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; background: #ffffff;
+    box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+}
+.mo-controls button { width: 46px; height: 46px; display: grid; place-items: center; font-size: 20px; color: #5f6368; background: none; border: 0; cursor: pointer; }
+.mo-controls button + button { border-top: 1px solid #dadce0; }
+.mo-compass {
+    position: absolute; z-index: 500; right: 16px; top: calc(74px + var(--safe-t)); width: 40px; height: 40px; border-radius: 50%;
+    display: grid; place-items: center; background: #ffffff; border: 0; color: #5f6368; font: 700 12px 'Roboto', system-ui, sans-serif;
+    box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3); cursor: pointer;
+}
+.mo-compass::before { content: ''; position: absolute; top: 4px; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-bottom: 7px solid #ea4335; border-top: 0; }
+.mo-compass span { margin-top: 6px; }
+.mo-label span { display: grid; place-items: center; width: 30px; height: 20px; border-radius: 6px; background: #174ea6; color: #fff; font: 700 12px 'Roboto', system-ui, sans-serif; }
+.mo-gate span { display: inline-block; padding: 3px 10px; border-radius: 6px; background: #1a73e8; color: #fff; font: 500 12px 'Roboto', system-ui, sans-serif; white-space: nowrap; box-shadow: 0 1px 4px rgba(60, 64, 67, 0.5); }
+.leaflet-tooltip.mo-tip { background: #ffffff; color: #202124; border: 0; border-radius: 8px; box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3); font: 500 13px 'Roboto', system-ui, sans-serif; }
+.leaflet-tooltip.mo-area { background: transparent; border: 0; box-shadow: none; color: #fde293; font: 700 12px 'Roboto', system-ui, sans-serif; text-shadow: 0 1px 3px #000; }
+.leaflet-tooltip.mo-area::before { display: none; }
+.mo-pin span { width: 32px; height: 32px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: grid; place-items: center; background: var(--c); border: 2px solid #ffffff; box-shadow: 0 1px 4px rgba(60, 64, 67, 0.5); }
+.mo-pin span svg { transform: rotate(45deg); color: #ffffff; }
+.mo-popup .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15); }
+.mo-pop { display: flex; flex-direction: column; gap: 4px; font: 400 13px 'Roboto', system-ui, sans-serif; color: #202124; min-width: 180px; }
+.mo-pop b { font-weight: 500; font-size: 14px; }
+.mo-pop span { color: #5f6368; }
+.mo-pop a { margin-top: 4px; color: #1a73e8; font-weight: 500; text-decoration: none; }

@@ -14,6 +14,13 @@ const FILL = {
     toilet: '#e6f4f1', stairs: '#f1f1f1', pooja: '#fff1c9', store: '#f3efe8', study: '#eef0fb', balcony: '#f6f6f6',
 };
 const DIR_DEG = { North: 0, East: 90, South: 180, West: 270 };
+// Compass side on the drawing's left / right (looking at the plot from the road) and top
+const SIDES = {
+    North: { left: 'East', right: 'West', top: 'South' },
+    South: { left: 'West', right: 'East', top: 'North' },
+    East: { left: 'South', right: 'North', top: 'West' },
+    West: { left: 'North', right: 'South', top: 'East' },
+};
 
 export function renderHousePlan(layout, floorId, { roadName = '' } = {}) {
     const floor = layout.floors.find(f => f.id === floorId) || layout.floors[0];
@@ -107,6 +114,13 @@ export function renderHousePlan(layout, floorId, { roadName = '' } = {}) {
         <text x="${sx(F / 2)}" y="${dy - fs * 0.45}" class="hp-dim-t" font-size="${fs * 0.85}">${feetInches(F)} frontage</text>
         <line x1="${pad * 0.45}" x2="${pad * 0.45}" y1="${sy(D)}" y2="${sy(0)}" class="hp-dim" marker-start="url(#hp-tick)" marker-end="url(#hp-tick)"/>
         <text x="${pad * 0.45 - fs * 0.45}" y="${sy(D / 2)}" class="hp-dim-t" font-size="${fs * 0.85}" transform="rotate(-90 ${pad * 0.45 - fs * 0.45} ${sy(D / 2)})">${feetInches(D)} depth</text>`);
+
+    // Which direction each side of the plot faces
+    const sd = SIDES[layout.facing];
+    const lf = fs * 0.72;
+    parts.push(`<text x="${sx(F / 2)}" y="${pad - lf * 0.9}" class="hp-side" font-size="${lf}">▲ ${sd.top.toUpperCase()}</text>
+        <text x="${pad * 0.8}" y="${sy(D / 2)}" class="hp-side" font-size="${lf}" transform="rotate(-90 ${pad * 0.8} ${sy(D / 2)})">▲ ${sd.left.toUpperCase()}</text>
+        <text x="${pad + F + pad * 0.5}" y="${sy(D / 2)}" class="hp-side" font-size="${lf}" transform="rotate(90 ${pad + F + pad * 0.5} ${sy(D / 2)})">▲ ${sd.right.toUpperCase()}</text>`);
 
     // North arrow: "up" on this drawing points away from the road
     const rot = (360 - DIR_DEG[layout.upDir]) % 360;

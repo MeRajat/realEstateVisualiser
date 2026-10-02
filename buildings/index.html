@@ -51,6 +51,12 @@
             <button type="button" data-action="reset" aria-label="Reset view">
                 <svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             </button>
+            <button type="button" data-action="places" aria-pressed="true" aria-label="Show nearby places">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.5" fill="currentColor"/></svg>
+            </button>
+            <button type="button" data-action="map" aria-label="Open map">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+            </button>
             <button type="button" data-action="time" id="time-btn" aria-label="Time of day: noon. Tap to change">
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             </button>
@@ -119,6 +125,8 @@
             <svg viewBox="0 0 24 24" width="22" height="22"><path d="m6 15 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
         </button>
     </div>
+
+    <section id="map-overlay" aria-label="Map" hidden></section>
 
     <aside id="sheet" class="sheet" aria-live="polite" hidden>
         <div class="sheet-grip" aria-hidden="true"></div>

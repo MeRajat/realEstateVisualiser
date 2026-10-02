@@ -1,5 +1,5 @@
 // Generates a 2D SVG floor plan for a unit type from its room rectangles.
-import { DIR_DEG, DIR_NAMES } from './model.js';
+import { DIR_DEG, DIR_NAMES, compass8 } from './model.js';
 
 const FILL = {
     living: '#1d3a2f',
@@ -51,12 +51,15 @@ function roomLabel(r) {
 export function floorPlanSVG(type, { facing = 'N', bearing = DIR_DEG[facing] ?? 0, title = '' } = {}) {
     const W = type.width;
     const D = type.depth;
-    const pad = 5;
-    const top = 8;
+    const pad = 8;
+    const top = 11;
+    // Which way each side of the drawing faces (top = the unit's facing side)
+    const side = (add) => DIR_NAMES[compass8(bearing + add)].toUpperCase();
+    const sides = { top: side(0), right: side(90), bottom: side(180), left: side(270) };
     // The plan's top edge is the unit's facing side, so north points `-facing` degrees from up
     const north = -bearing;
     const balcony = type.rooms.filter(r => r.kind === 'balcony');
-    return `<svg class="floorplan" viewBox="${-pad} ${-top} ${W + pad * 2} ${D + top + pad + 2}" role="img"
+    return `<svg class="floorplan" viewBox="${-pad} ${-top} ${W + pad * 2} ${D + top + pad + 5}" role="img"
         aria-label="${esc(title || type.name)} floor plan, ${W} by ${D} feet, front faces ${DIR_NAMES[facing]}">
         <defs>
             <pattern id="fp-hatch" width="1.2" height="1.2" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -77,11 +80,15 @@ export function floorPlanSVG(type, { facing = 'N', bearing = DIR_DEG[facing] ?? 
         <text x="${W / 2}" y="-3.6" class="fp-measure-text">${ft(W)}</text>
         <line x1="${W + 2.6}" y1="0" x2="${W + 2.6}" y2="${D}" class="fp-measure" marker-start="url(#fp-tick)" marker-end="url(#fp-tick)"/>
         <text x="${W + 3.8}" y="${D / 2}" class="fp-measure-text" transform="rotate(90 ${W + 3.8} ${D / 2})">${ft(D)}</text>
-        <text x="${W / 2}" y="${D + 3.4}" class="fp-front">TOP EDGE (BALCONY SIDE) FACES ${DIR_NAMES[facing].toUpperCase()}</text>
-        <g transform="translate(${-pad + 3} ${-top + 3}) rotate(${north})" class="fp-compass">
-            <circle r="2.4"/>
-            <path d="M0 -2 L0.9 0.6 L0 0.1 L-0.9 0.6 Z"/>
+        <text x="${W / 2}" y="-7.4" class="fp-side">▲ ${sides.top} · BALCONY SIDE</text>
+        <text x="${W / 2}" y="${D + 3.6}" class="fp-side">▼ ${sides.bottom}</text>
+        <text x="${-3.2}" y="${D / 2}" class="fp-side" transform="rotate(-90 ${-3.2} ${D / 2})">▲ ${sides.left}</text>
+        <text x="${W + 6.4}" y="${D / 2}" class="fp-side" transform="rotate(90 ${W + 6.4} ${D / 2})">▲ ${sides.right}</text>
+        <g transform="translate(${-pad + 3.6} ${-top + 3.6}) rotate(${north})" class="fp-compass">
+            <circle r="3"/>
+            <path d="M0 -2.6 L1.1 0.8 L0 0.15 L-1.1 0.8 Z"/>
         </g>
-        <text x="${-pad + 3 + Math.sin((north * Math.PI) / 180) * 3.6}" y="${-top + 3 - Math.cos((north * Math.PI) / 180) * 3.6 + 0.5}" class="fp-compass-label">N</text>
+        <text x="${-pad + 3.6 + Math.sin((north * Math.PI) / 180) * 4.5}" y="${-top + 3.6 - Math.cos((north * Math.PI) / 180) * 4.5 + 0.5}" class="fp-compass-label">N</text>
+        <text x="${W / 2}" y="${D + 7}" class="fp-front">FRONT (BALCONY) FACES ${DIR_NAMES[facing].toUpperCase()}</text>
     </svg>`;
 }

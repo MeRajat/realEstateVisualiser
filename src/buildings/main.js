@@ -7,6 +7,8 @@ import {
 } from './model.js';
 import { floorPlanSVG } from './floorplan.js';
 import { track, trackVisit, submitLead } from '../customer/api.js';
+import { placeFrom, gateLatLng, directionsTo, directionsBetween } from './geo.js';
+import { KINDS } from '../shared/place-kinds.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -282,6 +284,12 @@ sheetBody.addEventListener('click', e => {
         return;
     }
     if (t.dataset.nearCat) return openSheet(nearbySheet(t.dataset.nearCat));
+    if (t.dataset.place != null) return openPlace(nearby.places[Number(t.dataset.place)]);
+    if (t.dataset.placeLook != null) {
+        closeSheet();
+        return scene?.lookToward(nearby.places[Number(t.dataset.placeLook)]);
+    }
+    if (t.dataset.placeMap != null) return openMap(nearby.places[Number(t.dataset.placeMap)]);
     if (t.dataset.unit) return selectUnit(unitById.get(t.dataset.unit));
     if (t.dataset.amenity) return selectAmenity(society.amenities.find(a => a.id === t.dataset.amenity));
     switch (t.dataset.action) {
@@ -481,6 +489,8 @@ $('side-controls').addEventListener('click', e => {
         scene.reset();
     }
     if (a === 'time') cycleTime();
+    if (a === 'places') togglePlaces();
+    if (a === 'map') openMap();
 });
 
 // ─── TIME OF DAY ─────────────────────────────────────
@@ -544,7 +554,7 @@ const bearingTo = ([lat, lng]) => {
 };
 function nearbySheet(cat = 'all') {
     const cats = nearby.categories || [];
-    const places = (nearby.places || []).filter(p => cat === 'all' || p.cat === cat)
+    const places = (nearby.places || []).map((p, idx) => ({ ...p, idx })).filter(p => cat === 'all' || p.cat === cat)
         .map(p => ({ ...p, ...bearingTo(p.pos) }))
         .sort((a, b) => (a.driveMin ?? a.km * 3) - (b.driveMin ?? b.km * 3));
     const roads = cat === 'all' ? (nearby.roads || []) : [];
@@ -553,12 +563,19 @@ function nearbySheet(cat = 'all') {
     const row = (p) => p.name === gateRoad
         ? `<li><div><b>${esc(p.name)}</b><small>${esc(p.type || '')}</small></div>
             <div class="near-dist"><b>At the gate</b><small>${gateM} m private approach road</small></div></li>`
+        : p.idx != null ? `<li><button type="button" class="near-row" data-place="${p.idx}"><div><b>${esc(p.name)}</b><small>${esc(p.kind || p.type || '')}</small></div>
+        <div class="near-dist"><b>${p.driveMin != null ? `${Math.round(p.driveMin)} min` : `${p.km.toFixed(1)} km`}</b>
+        <small>${p.driveKm != null ? `${(+p.driveKm).toFixed(1)} km drive` : ''} · ${p.dir}</small></div></button></li>`
         : `<li><div><b>${esc(p.name)}</b><small>${esc(p.kind || p.type || '')}</small></div>
         <div class="near-dist"><b>${p.driveMin != null ? `${Math.round(p.driveMin)} min` : `${p.km.toFixed(1)} km`}</b>
         <small>${p.driveKm != null ? `${(+p.driveKm).toFixed(1)} km drive` : ''} · ${p.dir}</small></div></li>`;
     return `
         <h2 class="sheet-title">Nearby</h2>
         <p class="muted">${esc(`Gate opens onto ${society.approach?.joins || 'the main road'}.`)} Drive times are approximate.</p>
+        <div class="place-actions">
+            <a class="btn-primary" href="${directionsTo(gateLatLng())}" target="_blank" rel="noopener">Directions to the society</a>
+            <button type="button" class="btn-ghost" data-place-map="">Show on map</button>
+        </div>
         <div class="pills near-cats">
             ${[{ id: 'all', label: 'All' }, ...cats].map(c => `<button type="button" class="pill" data-near-cat="${esc(c.id)}" aria-pressed="${c.id === cat}">${esc(c.label)}</button>`).join('')}
         </div>
@@ -566,11 +583,69 @@ function nearbySheet(cat = 'all') {
         <h3 class="near-h">${cat === 'all' ? 'Places' : esc(cats.find(c => c.id === cat)?.label || '')}</h3>
         <ul class="near-list">${places.map(row).join('') || '<li class="muted">Nothing listed yet.</li>'}</ul>`;
 }
+let nearbyReady;
 if (nearbyLoader) {
-    nearbyLoader().then(m => {
+    nearbyReady = nearbyLoader().then(m => {
         nearby = m.default || m;
         if (nearby?.places?.length) $('nearby-btn').hidden = false;
-    }).catch(() => {});
+        return nearby;
+    }).catch(() => null);
+}
+
+// ─── PLACES IN 3D + PLACE CARD ───────────────────────
+function openPlace(p) {
+    if (!p) return;
+    const k = KINDS[p.kind] || KINDS.park;
+    const info = placeFrom(p.pos);
+    const idx = nearby.places.indexOf(nearby.places.find(x => x.name === p.name));
+    track('view_mode', { mode: 'place' });
+    openSheet(`
+        <div class="place-head" style="--c:${k.color}"><span class="place-ic">${k.icon}</span><span class="eyebrow">${esc(k.label)}</span></div>
+        <h2 class="sheet-title">${esc(p.name)}</h2>
+        <div class="place-facts">
+            <div><span>Drive</span><b>${p.driveMin != null ? `~${p.driveMin} min` : '—'}</b></div>
+            <div><span>Distance</span><b>${info.km.toFixed(1)} km</b></div>
+            <div><span>Direction</span><b>${esc(info.dir)}</b></div>
+        </div>
+        <p class="muted">${info.km.toFixed(1)} km to the ${esc(info.dirName.toLowerCase())} of ${esc(society.name)} in a straight line. Drive time is approximate.</p>
+        <div class="place-actions">
+            <a class="btn-primary" href="${directionsBetween(gateLatLng(), p.pos)}" target="_blank" rel="noopener">Directions</a>
+            <button type="button" class="btn-ghost" data-place-look="${idx}">Look towards it</button>
+            <button type="button" class="btn-ghost" data-place-map="${idx}">Show on map</button>
+        </div>`);
+}
+let placesOn = true;
+function togglePlaces() {
+    placesOn = !placesOn;
+    scene?.setPlacesVisible(placesOn);
+    const b = document.querySelector('[data-action="places"]');
+    b?.setAttribute('aria-pressed', placesOn);
+    toast(placesOn ? 'Nearby places shown' : 'Nearby places hidden');
+}
+
+// ─── MAP OVERLAY ─────────────────────────────────────
+let mapOverlay = null;
+async function openMap(place) {
+    const root = $('map-overlay');
+    if (state.viewing) exitView();
+    if (state.walking) exitWalk();
+    closeSheet();
+    root.hidden = false;
+    document.body.classList.add('map-open');
+    track('view_mode', { mode: 'map' });
+    if (!mapOverlay) {
+        root.classList.add('is-loading');
+        const { createMapOverlay } = await import('./mapview.js');
+        await nearbyReady;
+        mapOverlay = createMapOverlay({ root, places: nearby?.places || [], onClose: closeMap });
+        root.classList.remove('is-loading');
+    }
+    mapOverlay.show();
+    if (place) mapOverlay.focusPlace(place);
+}
+function closeMap() {
+    $('map-overlay').hidden = true;
+    document.body.classList.remove('map-open');
 }
 $('nearby-btn').addEventListener('click', () => {
     if (!nearby) return;
@@ -584,6 +659,7 @@ $('nearby-btn').addEventListener('click', () => {
 
 document.addEventListener('keydown', e => {
     if (e.key !== 'Escape' || document.querySelector('dialog[open]')) return;
+    if (!$('map-overlay').hidden) return closeMap();
     if (!sheet.hidden) sheet.querySelector('.sheet-close').click();
     else if (state.viewing) exitView();
     else if (state.walking) exitWalk();
@@ -610,6 +686,10 @@ async function boot() {
     setTimeout(() => $('scene-loading').remove(), 600);
     scene.setFilter(u => matches(u, state.filter));
     syncInsets();
+    nearbyReady?.then(n => {
+        if (!n?.places?.length) return;
+        scene.setPlaces(n.places, openPlace);
+    });
     const initial = unitById.get(new URLSearchParams(location.search).get('unit'));
     if (initial) setTimeout(() => selectUnit(initial), 1700); // after the intro swing
 }

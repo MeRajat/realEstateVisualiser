@@ -12,6 +12,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { society, towers, units, DIR_DEG, rotateXZ } from './model.js';
 import { createSurroundings } from './surroundings.js';
+import { createPlaceMarkers } from './places3d.js';
 
 const FH = society.floorHeight;
 const SLIDE = 6; // ft a selected unit slides out of the facade
@@ -498,6 +499,7 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange, onHe
     let dirty = true;
     loopReady = true;
     let flight = null;
+    let markers = null;
     let mode = 'orbit'; // 'orbit' | 'unit-view' | 'walk'
     const headingDir = new Vector3();
 
@@ -552,6 +554,7 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange, onHe
         if (active || dirty) {
             renderer.render(scene, camera);
             dirty = false;
+            markers?.update();
             if (onHeading) {
                 camera.getWorldDirection(headingDir);
                 const siteDeg = MathUtils.radToDeg(Math.atan2(headingDir.x, -headingDir.z));
@@ -926,6 +929,26 @@ export function createScene(el, { onUnit, onAmenity, onEmpty, onViewChange, onHe
             insets.top = top;
             insets.bottom = bottom;
             invalidate();
+        },
+        // Nearby places as map pins in the scene
+        setPlaces(places, onPick) {
+            markers = createPlaceMarkers({ el, camera, places, onPick });
+            invalidate();
+        },
+        setPlacesVisible(on) {
+            markers?.setVisible(on);
+            invalidate();
+        },
+        // Swing the camera round so the place is straight ahead, beyond the society
+        lookToward(place) {
+            const item = markers?.items.find(x => x.name === place.name);
+            if (isFirstPerson() || !item) return;
+            const t = controls.target.clone();
+            const dir = item.ground.clone().sub(t).setY(0).normalize();
+            const cur = camera.position.clone().sub(t);
+            const flat = Math.hypot(cur.x, cur.z);
+            const pos = t.clone().sub(dir.multiplyScalar(flat)).setY(camera.position.y);
+            fly({ pos, target: t, duration: 1100 });
         },
         reset() {
             if (isFirstPerson()) return exitFirstPerson();
