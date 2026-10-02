@@ -1,5 +1,6 @@
 // Site configuration + derived plot data shared by the customer & builder apps.
 import rawPlots from './plots_data.json';
+import geo from './geo.json';
 
 export const SITE = {
     name: 'The Greater Mansarovar',
@@ -10,20 +11,19 @@ export const SITE = {
 };
 
 // ─── GEOGRAPHIC ANCHOR ───────────────────────────────
-// Centre of the site boundary in data space, pinned to a real coordinate.
-export const GEO = {
-    lat: 26.635972,
-    lng: 75.683166,
-    centerX: 332.5,
-    centerY: 467.5,
-    metersPerUnit: 0.6,
-};
-const SCALE_LAT = GEO.metersPerUnit / 110850;
-const SCALE_LNG = GEO.metersPerUnit / 99505;
+// Plan placement on Earth lives in geo.json (shared with scripts/fetch-nearby.mjs).
+export const GEO = geo;
+const M_LAT = 110850;
+const M_LNG = 111320 * Math.cos((GEO.lat * Math.PI) / 180);
+const ROT = (GEO.rotationDeg * Math.PI) / 180;
 
+// Plan [x, y] (feet, y down) → [lat, lng]
 export function toLatLng([x, y]) {
-    // SVG y grows downward, latitude grows northward
-    return [GEO.lat + (GEO.centerY - y) * SCALE_LAT, GEO.lng + (x - GEO.centerX) * SCALE_LNG];
+    const dx = (x - GEO.centerX) * GEO.metersPerUnit;  // metres along plan-east
+    const dy = (GEO.centerY - y) * GEO.metersPerUnit;  // metres along plan-north
+    const e = dx * Math.cos(ROT) - dy * Math.sin(ROT);
+    const n = dx * Math.sin(ROT) + dy * Math.cos(ROT);
+    return [GEO.lat + n / M_LAT, GEO.lng + e / M_LNG];
 }
 
 // ─── ZONES (2×2 quadrant grid split by the main roads) ─

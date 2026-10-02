@@ -1,5 +1,5 @@
 import './styles.css';
-import { SITE, plots, plotById, stats, ZONES, toLatLng } from '../shared/site.js';
+import { SITE, GEO, plots, plotById, stats, ZONES, toLatLng } from '../shared/site.js';
 import {
     state, on, selectPlot, setFilter, setLead, setView, matchesFilter,
     activeFilterCount, SIZE_BUCKETS, DEFAULT_FILTER,
@@ -58,6 +58,7 @@ async function showView(name) {
     });
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('is-active', v.id === `view-${name}`));
     $('opacity-control').hidden = name !== 'map';
+    compass.style.transform = name === 'map' ? '' : `rotate(${GEO.rotationDeg}deg)`;
     document.body.dataset.view = name;
 
     const prev = views[state.view];
@@ -346,8 +347,16 @@ on('filter', () => {
     $('filter-btn').classList.toggle('is-active', n > 0);
 });
 
+// ─── NEARBY (lives on the map) ───────────────────────
+$('nearby-btn').addEventListener('click', async () => {
+    await showView('map');
+    views.map?.openNearby();
+    track('view_mode', { mode: 'nearby' });
+});
+
 // ─── BOOT ────────────────────────────────────────────
 document.body.dataset.view = 'plan';
+compass.style.transform = `rotate(${GEO.rotationDeg}deg)`;
 trackVisit();
 
 function openFromHash() {

@@ -1,0 +1,621 @@
+{
+ "generated": "2026-10-02",
+ "attribution": "Places © OpenStreetMap contributors · Routing © OSRM",
+ "gate": [
+  26.811011,
+  75.852658
+ ],
+ "approach": {
+  "road": "Mahal Road",
+  "lengthM": 69,
+  "path": [
+   [
+    26.811011,
+    75.852658
+   ],
+   [
+    26.811225,
+    75.853314
+   ]
+  ]
+ },
+ "categories": [
+  {
+   "id": "hospital",
+   "label": "Hospitals"
+  },
+  {
+   "id": "school",
+   "label": "Schools"
+  },
+  {
+   "id": "college",
+   "label": "Colleges"
+  },
+  {
+   "id": "mall",
+   "label": "Shopping"
+  },
+  {
+   "id": "park",
+   "label": "Parks"
+  },
+  {
+   "id": "transport",
+   "label": "Transport"
+  }
+ ],
+ "places": [
+  {
+   "name": "Ramanji Hospital",
+   "kind": "hospital",
+   "cat": "hospital",
+   "pos": [
+    26.803184,
+    75.855593
+   ],
+   "km": 0.9,
+   "driveKm": 3,
+   "driveMin": 8,
+   "route": [
+    [
+     26.81123,
+     75.85331
+    ],
+    [
+     26.81441,
+     75.8518
+    ],
+    [
+     26.81409,
+     75.85087
+    ],
+    [
+     26.81371,
+     75.85083
+    ],
+    [
+     26.81293,
+     75.84839
+    ],
+    [
+     26.8122,
+     75.84728
+    ],
+    [
+     26.81182,
+     75.8463
+    ],
+    [
+     26.80919,
+     75.84721
+    ],
+    [
+     26.80614,
+     75.84794
+    ],
+    [
+     26.80458,
+     75.84801
+    ],
+    [
+     26.80413,
+     75.84772
+    ],
+    [
+     26.80397,
+     75.84807
+    ],
+    [
+     26.80164,
+     75.84841
+    ],
+    [
+     26.80193,
+     75.85149
+    ],
+    [
+     26.80264,
+     75.85547
+    ],
+    [
+     26.80311,
+     75.85532
+    ]
+   ]
+  },
+  {
+   "name": "Harmony National Homeopathy Hospital",
+   "kind": "hospital",
+   "cat": "hospital",
+   "pos": [
+    26.806006,
+    75.84575
+   ],
+   "km": 0.9,
+   "driveKm": 1.9,
+   "driveMin": 5
+  },
+  {
+   "name": "Krishna Ram Charitable Hospital",
+   "kind": "hospital",
+   "cat": "hospital",
+   "pos": [
+    26.822802,
+    75.848227
+   ],
+   "km": 1.4,
+   "driveKm": 1.4,
+   "driveMin": 3
+  },
+  {
+   "name": "Narayana Multispeciality Hospital",
+   "kind": "hospital",
+   "cat": "hospital",
+   "pos": [
+    26.794995,
+    75.824163
+   ],
+   "km": 3.4,
+   "driveKm": 4.8,
+   "driveMin": 10
+  },
+  {
+   "name": "Mahatma Gandhi Medical College and Hospital",
+   "kind": "hospital",
+   "cat": "hospital",
+   "pos": [
+    26.769982,
+    75.854502
+   ],
+   "km": 4.6,
+   "driveKm": 7.1,
+   "driveMin": 12
+  },
+  {
+   "name": "Apex Hospitals Pvt Ltd",
+   "kind": "hospital",
+   "cat": "hospital",
+   "pos": [
+    26.854751,
+    75.825271
+   ],
+   "km": 5.6,
+   "driveKm": 5.9,
+   "driveMin": 9
+  },
+  {
+   "name": "ETERNAL MULTISPECIALITY HOSPITAL",
+   "kind": "hospital",
+   "cat": "hospital",
+   "pos": [
+    26.839961,
+    75.805846
+   ],
+   "km": 5.7,
+   "driveKm": 7.7,
+   "driveMin": 13
+  },
+  {
+   "name": "Turtles School",
+   "kind": "school",
+   "cat": "school",
+   "pos": [
+    26.830072,
+    75.843042
+   ],
+   "km": 2.3,
+   "driveKm": 2.4,
+   "driveMin": 4
+  },
+  {
+   "name": "VSPK International School",
+   "kind": "school",
+   "cat": "school",
+   "pos": [
+    26.797039,
+    75.835357
+   ],
+   "km": 2.4,
+   "driveKm": 3.7,
+   "driveMin": 9
+  },
+  {
+   "name": "British International School Jaipur (BISJaipur)",
+   "kind": "school",
+   "cat": "school",
+   "pos": [
+    26.789821,
+    75.834001
+   ],
+   "km": 3.1,
+   "driveKm": 4.7,
+   "driveMin": 11
+  },
+  {
+   "name": "Swami Keshwanand Institute of Technology (SKIT College)",
+   "kind": "college",
+   "cat": "college",
+   "pos": [
+    26.822904,
+    75.865976
+   ],
+   "km": 1.8,
+   "driveKm": 3.3,
+   "driveMin": 7
+  },
+  {
+   "name": "Global technical college",
+   "kind": "college",
+   "cat": "college",
+   "pos": [
+    26.788375,
+    75.833338
+   ],
+   "km": 3.2,
+   "driveKm": 4.7,
+   "driveMin": 11
+  },
+  {
+   "name": "Jaipur National University",
+   "kind": "college",
+   "cat": "college",
+   "pos": [
+    26.848311,
+    75.859384
+   ],
+   "km": 4.2,
+   "driveKm": 4.9,
+   "driveMin": 12
+  },
+  {
+   "name": "Jaipur Engineering College & Research Centre",
+   "kind": "college",
+   "cat": "college",
+   "pos": [
+    26.78191,
+    75.82067
+   ],
+   "km": 4.6,
+   "driveKm": 6.4,
+   "driveMin": 15
+  },
+  {
+   "name": "JTM Mall Jagatpura",
+   "kind": "mall",
+   "cat": "mall",
+   "pos": [
+    26.837437,
+    75.833568
+   ],
+   "km": 3.5,
+   "driveKm": 3.7,
+   "driveMin": 6,
+   "route": [
+    [
+     26.81123,
+     75.85331
+    ],
+    [
+     26.82775,
+     75.84529
+    ],
+    [
+     26.83007,
+     75.84337
+    ],
+    [
+     26.83198,
+     75.84115
+    ],
+    [
+     26.83472,
+     75.83621
+    ],
+    [
+     26.83514,
+     75.83482
+    ],
+    [
+     26.83606,
+     75.83492
+    ],
+    [
+     26.83762,
+     75.83404
+    ]
+   ]
+  },
+  {
+   "name": "Jaipur Traditional Center",
+   "kind": "mall",
+   "cat": "mall",
+   "pos": [
+    26.842233,
+    75.802162
+   ],
+   "km": 6.1,
+   "driveKm": 8.3,
+   "driveMin": 15
+  },
+  {
+   "name": "World Trade Park",
+   "kind": "mall",
+   "cat": "mall",
+   "pos": [
+    26.853454,
+    75.804951
+   ],
+   "km": 6.7,
+   "driveKm": 8.5,
+   "driveMin": 14
+  },
+  {
+   "name": "Gaurav Tower II",
+   "kind": "mall",
+   "cat": "mall",
+   "pos": [
+    26.855521,
+    75.807238
+   ],
+   "km": 6.7,
+   "driveKm": 8,
+   "driveMin": 14
+  },
+  {
+   "name": "Lotus Villa Small Park",
+   "kind": "park",
+   "cat": "park",
+   "pos": [
+    26.806219,
+    75.86926
+   ],
+   "km": 1.7,
+   "driveKm": 4.1,
+   "driveMin": 10
+  },
+  {
+   "name": "Budh Vihar Park",
+   "kind": "park",
+   "cat": "park",
+   "pos": [
+    26.818356,
+    75.86866
+   ],
+   "km": 1.7,
+   "driveKm": 3.1,
+   "driveMin": 6
+  },
+  {
+   "name": "Lotus Villa Main Park",
+   "kind": "park",
+   "cat": "park",
+   "pos": [
+    26.804373,
+    75.869752
+   ],
+   "km": 1.8,
+   "driveKm": 3.8,
+   "driveMin": 7
+  },
+  {
+   "name": "Getor Jagatpura",
+   "kind": "railway",
+   "cat": "transport",
+   "pos": [
+    26.837001,
+    75.832023
+   ],
+   "km": 3.6,
+   "driveKm": 3.8,
+   "driveMin": 7,
+   "route": [
+    [
+     26.81123,
+     75.85331
+    ],
+    [
+     26.82553,
+     75.84657
+    ],
+    [
+     26.82921,
+     75.84412
+    ],
+    [
+     26.83198,
+     75.84115
+    ],
+    [
+     26.83472,
+     75.83621
+    ],
+    [
+     26.83514,
+     75.83482
+    ],
+    [
+     26.83606,
+     75.83492
+    ],
+    [
+     26.83747,
+     75.8322
+    ],
+    [
+     26.83715,
+     75.83211
+    ]
+   ]
+  },
+  {
+   "name": "Jaipur International Airport",
+   "kind": "airport",
+   "cat": "transport",
+   "pos": [
+    26.828094,
+    75.819108
+   ],
+   "km": 3.9,
+   "driveKm": 5.4,
+   "driveMin": 11,
+   "route": [
+    [
+     26.81123,
+     75.85331
+    ],
+    [
+     26.82775,
+     75.84529
+    ],
+    [
+     26.83007,
+     75.84337
+    ],
+    [
+     26.83179,
+     75.84141
+    ],
+    [
+     26.83472,
+     75.83621
+    ],
+    [
+     26.83514,
+     75.83482
+    ],
+    [
+     26.8347,
+     75.83447
+    ],
+    [
+     26.83608,
+     75.83119
+    ],
+    [
+     26.83557,
+     75.82779
+    ],
+    [
+     26.83414,
+     75.82433
+    ],
+    [
+     26.82855,
+     75.82003
+    ],
+    [
+     26.82863,
+     75.81919
+    ],
+    [
+     26.82809,
+     75.81918
+    ]
+   ]
+  },
+  {
+   "name": "Sanganer Bus Depot",
+   "kind": "bus",
+   "cat": "transport",
+   "pos": [
+    26.796618,
+    75.815108
+   ],
+   "km": 4.1,
+   "driveKm": 5.5,
+   "driveMin": 11
+  },
+  {
+   "name": "Jaipur Junction",
+   "kind": "railway",
+   "cat": "transport",
+   "pos": [
+    26.920789,
+    75.786654
+   ],
+   "km": 13.9,
+   "driveKm": 15.4,
+   "driveMin": 27
+  }
+ ],
+ "roads": [
+  {
+   "name": "Mahal Road",
+   "type": "secondary",
+   "pos": [
+    26.810359,
+    75.853905
+   ],
+   "km": 0.1,
+   "driveKm": 1.7,
+   "driveMin": 3
+  },
+  {
+   "name": "Rana Sanga Marg",
+   "type": "secondary",
+   "pos": [
+    26.802362,
+    75.853241
+   ],
+   "km": 1,
+   "driveKm": 2.7,
+   "driveMin": 7
+  },
+  {
+   "name": "Agra Jaipur Bikaner Bypass",
+   "type": "secondary",
+   "pos": [
+    26.839449,
+    75.851704
+   ],
+   "km": 3.1,
+   "driveKm": 3.5,
+   "driveMin": 8
+  },
+  {
+   "name": "Jaipur - Kota Highway",
+   "type": "trunk",
+   "pos": [
+    26.789518,
+    75.819091
+   ],
+   "km": 4.2,
+   "driveKm": 6.2,
+   "driveMin": 13
+  },
+  {
+   "name": "Bambala Bridge",
+   "type": "trunk",
+   "pos": [
+    26.794609,
+    75.815378
+   ],
+   "km": 4.2,
+   "driveKm": 5.8,
+   "driveMin": 12
+  },
+  {
+   "name": "Tonk Road",
+   "type": "primary",
+   "pos": [
+    26.826805,
+    75.794463
+   ],
+   "km": 6.1,
+   "driveKm": 9.5,
+   "driveMin": 16
+  },
+  {
+   "name": "Sanganer Sethu",
+   "type": "trunk",
+   "pos": [
+    26.818591,
+    75.790643
+   ],
+   "km": 6.3,
+   "driveKm": 7.9,
+   "driveMin": 13
+  }
+ ]
+}

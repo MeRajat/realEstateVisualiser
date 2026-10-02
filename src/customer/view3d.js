@@ -1,15 +1,17 @@
 // Lightweight 3D site model (three.js). Lazy-loaded the first time the 3D tab opens.
 // Renders on demand only — no continuous loop while the scene is idle.
 import {
-    WebGLRenderer, Scene, PerspectiveCamera, Color, Fog, HemisphereLight, DirectionalLight,
+    WebGLRenderer, Scene, PerspectiveCamera, Color, Fog,
     Group, Shape, ExtrudeGeometry, ShapeGeometry, PlaneGeometry, BoxGeometry, IcosahedronGeometry,
     CylinderGeometry, Mesh, MeshLambertMaterial, InstancedMesh, Object3D, CanvasTexture,
-    SRGBColorSpace, Raycaster, Vector2, Vector3, MathUtils,
+    SRGBColorSpace, Raycaster, Vector2, Vector3, MathUtils, PCFSoftShadowMap, ACESFilmicToneMapping,
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { features, plots, boundary, GEO } from '../shared/site.js';
 import { state, on, selectPlot, matchesFilter } from './store.js';
+import { satelliteGround, createSky } from '../shared/geo3d.js';
+import { buildProps, createWalk } from './walk.js';
 
 const PLOT_H = 3;
 const LIFT = 5;
@@ -20,7 +22,7 @@ const TEX_H = 950;
 const C = {
     bg: 0x0b0f0d,
     ground: 0x18211c,
-    base: 0x26372a,
+    base: 0x5b6440, // dry grass — reads as open land at eye level
     phase: 0x2f4a33,
     common: 0x3d7a3c,
     wall: 0xd9cfb6,
@@ -136,14 +138,17 @@ function buildLabelTexture(renderer) {
 export function create3DView(el, { compass } = {}) {
     const renderer = new WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = PCFSoftShadowMap;
+    renderer.toneMapping = ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.95;
     el.appendChild(renderer.domElement);
     renderer.domElement.setAttribute('aria-label', '3D site model. Drag to rotate, pinch to zoom, tap a plot for details.');
 
     const scene = new Scene();
-    scene.background = new Color(C.bg);
-    scene.fog = new Fog(C.bg, 2000, 5000);
+    scene.fog = new Fog(0xc9d3d6, 3000, 26000); // daytime haze toward the horizon
 
-    const camera = new PerspectiveCamera(45, 1, 5, 8000);
+    const camera = new PerspectiveCamera(45, 1, 5, 70000);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
@@ -153,17 +158,34 @@ export function create3DView(el, { compass } = {}) {
     controls.screenSpacePanning = false;
     controls.zoomToCursor = true;
 
-    scene.add(new HemisphereLight(0xe8fff1, 0x1a261d, 1.5));
-    const sun = new DirectionalLight(0xffffff, 1.9);
-    sun.position.set(-500, 900, 400);
-    scene.add(sun);
+    // Real sky + sun. Scene -z is plan-north, which points GEO.rotationDeg west of true north,
+    // so a true bearing b sits at b + rotationDeg in scene terms. Mid-morning sun from the south-east.
+    const { sun } = createSky(scene, { scale: 40000, elevation: 42, azimuth: 140 + GEO.rotationDeg });
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    Object.assign(sun.shadow.camera, { left: -800, right: 800, top: 800, bottom: -800, near: 10, far: 4000 });
+    sun.shadow.bias = -0.0004;
+    sun.shadow.normalBias = 0.6;
+    sun.position.multiplyScalar(2);
 
     const site = new Group();
     site.position.set(-GEO.centerX, 0, -GEO.centerY);
     scene.add(site);
 
-    const ground = new Mesh(flat(new PlaneGeometry(9000, 9000)), new MeshLambertMaterial({ color: C.ground }));
-    ground.position.set(GEO.centerX, -1.2, GEO.centerY);
+    // Real satellite imagery around the site (metres, true north) → feet, plan-aligned
+    const satellite = satelliteGround({
+        lat: GEO.lat, lng: GEO.lng, renderer,
+        onUpdate: () => { needsRender = true; start(); },
+    });
+    satellite.scale.setScalar(1 / GEO.metersPerUnit);
+    satellite.rotation.y = -MathUtils.degToRad(GEO.rotationDeg);
+    satellite.position.y = -1.5;
+    scene.add(satellite);
+
+    // Neutral earth under the imagery while tiles load (or if they can't)
+    const ground = new Mesh(flat(new PlaneGeometry(60000, 60000)), new MeshLambertMaterial({ color: 0x8a7f66, depthWrite: false }));
+    ground.renderOrder = -3;
+    ground.position.set(GEO.centerX, -2, GEO.centerY);
     site.add(ground);
 
     // Site base (grass) + perimeter wall
@@ -172,6 +194,7 @@ export function create3DView(el, { compass } = {}) {
         new MeshLambertMaterial({ color: C.base }),
     );
     base.position.y = -1;
+    base.receiveShadow = true;
     site.add(base);
 
     const wallParts = boundary.points.map((p, i) => {
@@ -182,24 +205,32 @@ export function create3DView(el, { compass } = {}) {
         g.translate((p[0] + q[0]) / 2, 3.5, (p[1] + q[1]) / 2);
         return g;
     });
-    site.add(new Mesh(mergeGeometries(wallParts), new MeshLambertMaterial({ color: C.wall })));
+    const wall = new Mesh(mergeGeometries(wallParts), new MeshLambertMaterial({ color: C.wall }));
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    site.add(wall);
 
     const labelTex = buildLabelTexture(renderer);
 
     // Roads
     const roadMat = new MeshLambertMaterial({ color: 0xffffff, map: labelTex });
-    features.filter(f => f.kind === 'road').forEach(r => {
+    const roadMeshes = features.filter(f => f.kind === 'road').map(r => {
         const m = new Mesh(flat(new ShapeGeometry(shapeOf(r.points))), roadMat);
         m.position.y = 0.6;
+        m.receiveShadow = true;
         site.add(m);
+        return m;
     });
 
     // Common / green areas (the large PHASE-1 block is future land — keep it flat)
     const commons = features.filter(f => f.kind === 'common');
-    commons.forEach((f, i) => {
+    const commonMeshes = commons.map((f, i) => {
         const big = f.box.w * f.box.h > 0.2 * boundary.box.w * boundary.box.h;
         const g = flat(new ExtrudeGeometry(shapeOf(f.points), { depth: big ? 0.3 : 0.8 + i * 0.1, bevelEnabled: false }));
-        site.add(new Mesh(g, new MeshLambertMaterial({ color: big ? C.phase : C.common })));
+        const m = new Mesh(g, new MeshLambertMaterial({ color: big ? C.phase : C.common }));
+        m.receiveShadow = true;
+        site.add(m);
+        return m;
     });
 
     // Plots
@@ -210,9 +241,14 @@ export function create3DView(el, { compass } = {}) {
         const side = new MeshLambertMaterial();
         const mesh = new Mesh(g, [cap, side]);
         mesh.userData = { plot: p, y: 0, h: 1 };
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         site.add(mesh);
         return mesh;
     });
+
+    // Number boards, street lights, gate, approach road, neighbourhood (see walk.js)
+    const props = buildProps(site);
 
     // Trees: instanced low-poly canopies inside green areas and along the perimeter
     const blocked = features.filter(f => f.kind === 'plot' || f.kind === 'road');
@@ -240,6 +276,7 @@ export function create3DView(el, { compass } = {}) {
             if (free(pt)) spots.push(pt);
         }
     });
+    props.treeSpots.forEach(([x, y]) => spots.push([x, y])); // scrub on the open land outside
     const canopy = new InstancedMesh(new IcosahedronGeometry(6, 0), new MeshLambertMaterial({ color: 0xffffff, flatShading: true }), spots.length);
     const trunk = new InstancedMesh(new CylinderGeometry(0.7, 1, 6, 5).translate(0, 3, 0), new MeshLambertMaterial({ color: 0x6b4f35 }), spots.length);
     const dummy = new Object3D();
@@ -257,6 +294,8 @@ export function create3DView(el, { compass } = {}) {
         canopy.setMatrixAt(i, dummy.matrix);
         canopy.setColorAt(i, tint.setHSL(0.27 + rand() * 0.08, 0.45, 0.28 + rand() * 0.1));
     });
+    canopy.castShadow = true;
+    trunk.castShadow = true;
     site.add(trunk, canopy);
 
     // ─── STYLE / ANIMATION ───────────────────────────
@@ -265,16 +304,22 @@ export function create3DView(el, { compass } = {}) {
     let visible = false;
     let flight = null;
 
+    // Overview: plots as raised, colour-coded blocks. Walking: realistic open land — a low
+    // kerb of natural ground, tinted only slightly by status, so the site reads as it really looks.
+    const WALK_TINT = { Available: 0x9fb36a, Sold: 0xa79a80, Reserved: 0xb9a36a };
     function stylePlots() {
+        const walking = walk?.active;
         plotMeshes.forEach(m => {
             const p = m.userData.plot;
             const selected = p.id === state.selectedId;
             const match = matchesFilter(p);
-            const color = selected ? C.selected : match ? C[p.status] ?? C.Sold : C.dim;
+            const color = walking
+                ? (selected ? 0x5fd3c0 : WALK_TINT[p.status] ?? WALK_TINT.Sold)
+                : selected ? C.selected : match ? C[p.status] ?? C.Sold : C.dim;
             m.material[0].color.setHex(color);
             m.material[1].color.setHex(color).multiplyScalar(0.62);
-            m.userData.y = selected ? LIFT : 0;
-            m.userData.h = match || selected ? 1 : 0.25;
+            m.userData.y = selected && !walking ? LIFT : 0;
+            m.userData.h = walking ? 0.12 : match || selected ? 1 : 0.25;
         });
         needsRender = true;
         start();
@@ -322,15 +367,18 @@ export function create3DView(el, { compass } = {}) {
     function loop(now) {
         raf = 0;
         if (!visible) return;
-        const flying = stepFlight(now);
-        const changed = controls.update();
+        const walking = walk.active;
+        const flying = !walking && stepFlight(now);
+        // OrbitControls would re-aim the camera at its target, so it sits out while walking
+        const changed = walking ? walk.update(now) : controls.update();
         const moving = animatePlots();
         if (flying || changed || moving || needsRender) {
             renderer.render(scene, camera);
             needsRender = false;
-            if (compass) compass.style.transform = `rotate(${MathUtils.radToDeg(controls.getAzimuthalAngle())}deg)`;
+            const heading = walking ? camera.rotation.y : controls.getAzimuthalAngle();
+            if (compass) compass.style.transform = `rotate(${MathUtils.radToDeg(heading) + GEO.rotationDeg}deg)`;
         }
-        // Keep looping only while something is in motion (damping, flights, plot lifts)
+        // Keep looping only while something is in motion (damping, flights, plot lifts, walking)
         // (controls.update() can already have re-armed it through the 'change' listener)
         if ((flying || changed || moving) && !raf) raf = requestAnimationFrame(loop);
     }
@@ -384,6 +432,7 @@ export function create3DView(el, { compass } = {}) {
     let down = null;
     renderer.domElement.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY }; });
     renderer.domElement.addEventListener('pointerup', e => {
+        if (walk.active) return; // walk mode handles its own taps
         if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
         const r = renderer.domElement.getBoundingClientRect();
         ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
@@ -392,10 +441,25 @@ export function create3DView(el, { compass } = {}) {
         selectPlot(hit ? hit.object.userData.plot.id : null, '3d');
     });
 
+    // ─── WALK MODE ───────────────────────────────────
+    const walk = createWalk({
+        el, renderer, camera, controls, site, plotMeshes,
+        groundMeshes: [base, ...roadMeshes, ...commonMeshes, ...props.ground],
+        requestRender: () => { needsRender = true; start(); },
+        selectPlot,
+        onChange: (on) => {
+            document.body.classList.toggle('is-walking', on);
+            flight = null;
+            stylePlots();
+        },
+    });
+
     // ─── STATE SYNC ──────────────────────────────────
     on('select', ({ plot, source }) => {
         stylePlots();
-        if (plot && source !== '3d' && visible) requestAnimationFrame(() => focus(plot));
+        if (!plot || !visible || source === '3d' || source === 'walk') return;
+        if (walk.active) walk.visitPlot(plot);
+        else requestAnimationFrame(() => focus(plot));
     });
     on('filter', stylePlots);
 
@@ -434,16 +498,22 @@ export function create3DView(el, { compass } = {}) {
             start();
         },
         hide() {
+            walk.exit();
             visible = false;
             if (raf) cancelAnimationFrame(raf);
             raf = 0;
-            if (compass) compass.style.transform = '';
         },
-        zoomIn() { flyTo(controls.target.clone(), camera.position.distanceTo(controls.target) / 1.6, 350); },
+        zoomIn() {
+            if (walk.active) return;
+            flyTo(controls.target.clone(), camera.position.distanceTo(controls.target) / 1.6, 350); },
         zoomOut() {
+            if (walk.active) return;
             const d = Math.min(controls.maxDistance, camera.position.distanceTo(controls.target) * 1.6);
             flyTo(controls.target.clone(), d, 350);
         },
-        reset,
+        reset() {
+            if (walk.active) walk.exit();
+            reset();
+        },
     };
 }

@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { features, boundary, toLatLng, ZONES, STATUS_COLORS } from '../shared/site.js';
 import { state, on, selectPlot, matchesFilter } from './store.js';
 import { getInsets } from './layout.js';
+import { createNearbyLayer } from './nearby.js';
 
 const MAP_COLORS = { road: '#2b302d', common: '#3d7a3c', selected: '#2dd4bf', dim: '#1d2420' };
 
@@ -57,8 +58,16 @@ export function createMapView(el, { opacitySlider } = {}) {
         }).addTo(map);
     });
 
+    const nearby = createNearbyLayer(map, {
+        siteLatLngs: ll(boundary.points),
+        onOpen: () => { if (state.selectedId) selectPlot(null, 'map'); },
+    });
+
     map.on('click', () => { if (state.selectedId) selectPlot(null, 'map'); });
-    const syncLabels = () => el.classList.toggle('show-road-labels', map.getZoom() >= 18.5);
+    const syncLabels = () => {
+        el.classList.toggle('show-road-labels', map.getZoom() >= 18.5);
+        el.classList.toggle('hide-zone-labels', map.getZoom() < 16.5);
+    };
     map.on('zoomend', syncLabels);
 
     let opacity = opacitySlider ? opacitySlider.value / 100 : 0.65;
@@ -98,6 +107,7 @@ export function createMapView(el, { opacitySlider } = {}) {
 
     on('select', ({ plot, source }) => {
         style();
+        if (plot && nearby.isOpen()) nearby.close();
         if (plot && source !== 'map' && state.view === 'map') requestAnimationFrame(() => focus(plot));
     });
     on('filter', style);
@@ -113,6 +123,8 @@ export function createMapView(el, { opacitySlider } = {}) {
             fitted = true;
             syncLabels();
         },
+        openNearby: () => nearby.open(),
+        hide: () => nearby.close(),
         zoomIn: () => map.zoomIn(),
         zoomOut: () => map.zoomOut(),
         reset,

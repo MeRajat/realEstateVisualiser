@@ -14,11 +14,15 @@ export function getInsets({ withSheet = false } = {}) {
         left: 16,
         right: 16,
     };
-    const sheet = document.getElementById('sheet');
-    if (withSheet && sheet && !sheet.hidden) {
-        // offset* ignores the slide-in transform, so this is right mid-animation too
-        if (isMobile()) insets.bottom = Math.max(insets.bottom, sheet.offsetHeight + 8);
-        else insets.right = Math.max(insets.right, vw - sheet.offsetLeft + 8);
+    if (withSheet) {
+        ['sheet', 'nearby-panel'].forEach(id => {
+            const panel = document.getElementById(id);
+            if (!panel || panel.hidden) return;
+            // offset* ignores the slide-in transform, so this is right mid-animation too
+            if (isMobile()) insets.bottom = Math.max(insets.bottom, panel.offsetHeight + 8);
+            else if (id === 'sheet') insets.right = Math.max(insets.right, vw - panel.offsetLeft + 8);
+            else insets.left = Math.max(insets.left, panel.offsetLeft + panel.offsetWidth + 8);
+        });
     }
     return insets;
 }

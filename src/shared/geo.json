@@ -1,0 +1,10 @@
+{
+  "_doc": "Where the plan sits on Earth. lat/lng = plan centre (centerX, centerY). rotationDeg rotates the plan counter-clockwise from north (20 = plan-up points 20° west of north). metersPerUnit: plan units are feet. gate = plan point of the main entrance (east boundary, on the 9 MT road).",
+  "lat": 26.8111,
+  "lng": 75.8516,
+  "rotationDeg": 20,
+  "metersPerUnit": 0.3048,
+  "centerX": 332.5,
+  "centerY": 467.5,
+  "gate": [645.6, 616]
+}
