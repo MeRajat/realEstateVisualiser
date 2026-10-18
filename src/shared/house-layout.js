@@ -104,13 +104,15 @@ export function generateHouseLayout(plot) {
         : { dining: gridCell(1, 0), core: gridCell(1, 1) };
     const stairs = { ...mid.core, w: mid.core.w * 0.58 };
     const commonToilet = { ...mid.core, x: mid.core.x + mid.core.w * 0.58, w: mid.core.w * 0.42 };
-    // Stairs on the outer wall side, toilet towards the centre
-    if (!deep || livingCol !== 0) {
+    // Toilet on the outer wall, stairs towards the inside — Vastu keeps toilets away from
+    // the centre of the house (Brahmasthan); the outer wall also gives it a window
+    const coreOnLeft = deep ? otherCol === 0 : true;
+    if (coreOnLeft) {
+        commonToilet.x = mid.core.x;
+        stairs.x = mid.core.x + commonToilet.w;
+    } else {
         stairs.x = mid.core.x;
         commonToilet.x = mid.core.x + stairs.w;
-    } else {
-        stairs.x = mid.core.x + mid.core.w - stairs.w;
-        commonToilet.x = mid.core.x;
     }
 
     const room = (kind, label, rect, extra = {}) => ({ kind, label, ...roundRect(rect), ...extra });
@@ -230,4 +232,137 @@ export function localToPlan(plot, u, v) {
         case 'East': return [b.maxX - v, b.maxY - u];
         default: return [b.minX + v, b.minY + u]; // West
     }
+}
+
+// ─── VASTU ───────────────────────────────────────────
+// Traditional Vastu Purusha Mandala: the plot is read as a 3×3 grid of directions.
+export const VASTU_ZONES = {
+    NE: { name: 'Ishanya', use: 'Water, prayer — keep light & open', tint: '#4285f4' },
+    E: { name: 'Indra', use: 'Entrance, living, morning sun', tint: '#34a853' },
+    SE: { name: 'Agni', use: 'Fire — kitchen', tint: '#ea4335' },
+    S: { name: 'Yama', use: 'Rest, heavy storage, stairs', tint: '#a142f4' },
+    SW: { name: 'Nairutya', use: 'Master bedroom — heaviest part', tint: '#8d6e63' },
+    W: { name: 'Varuna', use: "Dining, children's room, study", tint: '#00acc1' },
+    NW: { name: 'Vayu', use: 'Guests, toilets, storage', tint: '#9aa0a6' },
+    N: { name: 'Kubera', use: 'Wealth — entrance, living, cash', tint: '#fbbc04' },
+    C: { name: 'Brahmasthan', use: 'Centre — keep open, no toilet or stairs', tint: '#f9ab00' },
+};
+
+const FACING_NOTES = {
+    East: 'East-facing plots are considered highly auspicious in Vastu: the morning sun enters the main door, associated with health and growth.',
+    North: 'North-facing plots are linked to Kubera, the lord of wealth, and are considered very good for prosperity.',
+    West: 'West-facing plots are considered good for stability and business when the main door is in the north half of the west side.',
+    South: 'South-facing plots are fine when planned well: keep the main door towards the south-east and the south-west corner the heaviest part of the house.',
+};
+
+// Compass zone of a local (u, v) point, for a given road-facing direction
+export function zoneAt(facing, F, D, u, v) {
+    const e = EDGES[facing];
+    const third = (t, len) => (t < len / 3 ? 0 : t > (2 * len) / 3 ? 2 : 1);
+    const iu = third(u, F), iv = third(v, D);
+    const part = (i, a, b) => (i === 0 ? a : i === 2 ? b : null);
+    const dirs = [part(iu, e.u0, e.uF), part(iv, e.v0, e.vD)].filter(Boolean);
+    if (!dirs.length) return 'C';
+    const ns = dirs.find(d => d === 'North' || d === 'South');
+    const ew = dirs.find(d => d === 'East' || d === 'West');
+    return (ns ? SHORT[ns] : '') + (ew ? SHORT[ew] : '');
+}
+
+// Grid of the 9 zones in local coordinates (for drawing the mandala over the plan)
+export function vastuGrid(layout) {
+    const { facing, frontage: F, depth: D } = layout;
+    const cells = [];
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            const r = { x: (F / 3) * i, y: (D / 3) * j, w: F / 3, h: D / 3 };
+            cells.push({ ...r, zone: zoneAt(facing, F, D, r.x + r.w / 2, r.y + r.h / 2) });
+        }
+    }
+    return cells;
+}
+
+const RULES = {
+    living: { label: 'Living room', ideal: ['N', 'E', 'NE'], ok: ['NW', 'C'], tip: 'Keep heavy sofas on the south and west walls.' },
+    kitchen: { label: 'Kitchen', ideal: ['SE'], ok: ['NW', 'E'], tip: 'Place the stove so the cook faces east.' },
+    master: { label: 'Master bedroom', ideal: ['SW'], ok: ['S', 'W'], tip: 'Sleep with your head towards the south.' },
+    bedroom: { label: 'Second bedroom', ideal: ['W', 'S', 'NW'], ok: ['SW', 'N', 'E', 'SE'], tip: "Good for children's or guest room." },
+    pooja: { label: 'Pooja', ideal: ['NE'], ok: ['E', 'N'], avoid: ['S', 'SW', 'SE'], tip: 'Face east or north while praying.' },
+    stairs: { label: 'Staircase', ideal: ['S', 'W', 'SW'], ok: ['SE', 'NW'], avoid: ['NE', 'C'], tip: 'Stairs should turn clockwise going up.' },
+    toilet: { label: 'Toilets', ideal: ['NW', 'W', 'S'], ok: ['SE', 'E', 'N'], avoid: ['NE', 'C', 'SW'], tip: 'Keep the toilet door closed and the seat facing north–south.' },
+    dining: { label: 'Dining', ideal: ['W', 'E', 'C'], ok: ['N', 'S', 'NW'], tip: 'Sit facing east or north while eating.' },
+};
+const REMEDY = {
+    kitchen: 'If the kitchen cannot be in the south-east, keep the stove in the south-east corner of the kitchen.',
+    master: 'Keep the bed in the south-west part of the room and heavy wardrobes on the south-west walls.',
+    pooja: 'A small pooja unit on the north-east wall of the living room works well.',
+    stairs: 'Avoid stairs in the north-east; use the south or west side.',
+    toilet: 'A pyramid or sea-salt bowl is a common Vastu remedy for a toilet in the wrong zone.',
+    living: 'Keep this room light and uncluttered, with the entrance wall bright.',
+    dining: 'Keep the centre of the house open and well lit.',
+    bedroom: 'Place the bed so you sleep with your head to the south or east.',
+};
+
+export function vastuReport(layout) {
+    const { facing, frontage: F, depth: D } = layout;
+    const rooms = layout.floors[0].rooms;
+    const zoneOf = (r) => zoneAt(facing, F, D, r.x + r.w / 2, r.y + r.h / 2);
+    const items = [];
+    const check = (kind, room, labelOverride) => {
+        if (!room) return;
+        const rule = RULES[kind];
+        const zone = zoneOf(room);
+        const status = rule.ideal.includes(zone) ? 'ideal' : (rule.avoid || []).includes(zone) ? 'avoid' : rule.ok.includes(zone) ? 'ok' : 'ok';
+        items.push({ key: kind, label: labelOverride || rule.label, zone, zoneName: VASTU_ZONES[zone].name, status, tip: status === 'ideal' ? rule.tip : REMEDY[kind] });
+    };
+
+    // Main entrance: the door sits on the road side of the living room. Better halves:
+    // East/West plots → north half; North/South plots → east half.
+    const living = rooms.find(r => r.door);
+    const doorZone = living ? zoneAt(facing, F, D, living.x + living.w / 2, 0) : null;
+    const goodHalf = { East: 'N', West: 'N', North: 'E', South: 'E' }[facing];
+    const doorGood = doorZone && doorZone.includes(goodHalf);
+    const entranceStatus = (facing === 'East' || facing === 'North') ? (doorGood ? 'ideal' : 'ok') : (doorGood ? 'ok' : 'avoid');
+    items.push({
+        key: 'entrance', label: 'Main entrance', zone: doorZone, zoneName: VASTU_ZONES[doorZone]?.name, status: entranceStatus,
+        tip: doorGood
+            ? `Door placed in the ${goodHalf === 'N' ? 'north' : 'east'} half of the ${facing.toLowerCase()} side — the favourable part of this wall.`
+            : `Shift the main door towards the ${goodHalf === 'N' ? 'north' : 'east'} half of the ${facing.toLowerCase()} side.`,
+    });
+
+    check('living', living);
+    check('kitchen', rooms.find(r => r.kind === 'kitchen'));
+    check('master', rooms.find(r => r.label === 'Master Bedroom'));
+    check('bedroom', rooms.find(r => r.label === 'Bedroom 2'));
+    check('pooja', rooms.find(r => r.kind === 'pooja'));
+    check('stairs', rooms.find(r => r.kind === 'stairs'));
+    // Toilets: report the worst-placed one
+    const toilets = [...rooms.filter(r => r.kind === 'toilet'), ...rooms.filter(r => r.toilet).map(r => r.toilet)];
+    const rank = { avoid: 0, ok: 1, ideal: 2 };
+    const tItems = toilets.map(t => {
+        const z = zoneOf(t);
+        const rule = RULES.toilet;
+        return { z, s: rule.ideal.includes(z) ? 'ideal' : rule.avoid.includes(z) ? 'avoid' : 'ok' };
+    }).sort((a, b) => rank[a.s] - rank[b.s]);
+    if (tItems.length) {
+        const w = tItems[0];
+        items.push({ key: 'toilet', label: 'Toilets', zone: w.z, zoneName: VASTU_ZONES[w.z].name, status: w.s, tip: w.s === 'ideal' ? RULES.toilet.tip : REMEDY.toilet });
+    }
+    // Brahmasthan: what sits at the centre of the house
+    const H = layout.house;
+    const centre = rooms.find(r => r.kind !== 'pooja' && H.x + H.w / 2 >= r.x && H.x + H.w / 2 <= r.x + r.w && H.y + H.h / 2 >= r.y && H.y + H.h / 2 <= r.y + r.h);
+    const heavy = centre && ['toilet', 'stairs', 'kitchen'].includes(centre.kind);
+    items.push({
+        key: 'centre', label: 'Centre (Brahmasthan)', zone: 'C', zoneName: 'Brahmasthan', status: heavy ? 'avoid' : 'ideal',
+        tip: heavy ? `Move the ${centre.label.toLowerCase()} away from the centre and keep it open.` : `The centre is the ${centre ? centre.label.toLowerCase() : 'open area'} — open and free, as recommended.`,
+    });
+
+    const pts = { ideal: 1, ok: 0.6, avoid: 0 };
+    const weights = { entrance: 1.5, kitchen: 1.5, master: 1.5, centre: 1.2, pooja: 1, stairs: 1, toilet: 1, living: 0.8, bedroom: 0.5 };
+    let got = 0, max = 0;
+    items.forEach(i => { const w = weights[i.key] || 0.5; got += pts[i.status] * w; max += w; });
+    // Facing adds a small bonus/penalty as traditionally perceived
+    const facingAdj = { East: 0.4, North: 0.4, West: 0, South: -0.4 }[facing];
+    const score = Math.max(1, Math.min(10, Math.round(((got / max) * 10 + facingAdj) * 2) / 2));
+    const label = score >= 9 ? 'Excellent' : score >= 7.5 ? 'Very good' : score >= 6 ? 'Good' : 'Needs care';
+    return { score, label, facingNote: FACING_NOTES[facing], items };
 }
