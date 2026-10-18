@@ -16,7 +16,12 @@ Who pays: the builder. What they pay for (from `MarketResearch.md`): never selli
 4. **Ad spend & cost per site visit**: builder enters weekly spend per campaign (or Insights API when token present); dashboard shows CPL, cost per site visit, cost per booking by source.
 5. **Ad creative generator**: Claude writes 3 Hindi/English ad variants (primary text, headline, CTA) from live stock highlights, with the RERA line auto-added; suggested audience + daily budget from CPL benchmarks; copy-to-Meta-Ads-Manager (no Marketing API app review needed to ship).
 
-## Stage 3 — Instagram / YouTube content (branch `stage-3-content`)
+## Stage 3 — CRM: drop-off, insights, action items (branch `stage-3-crm`) ✅ built
+- Activity log (calls with outcome, WhatsApp, visits done / no-show, lost reasons, assignment); pipeline with per-step conversion, stuck and lost counts; speed to first call; source and team comparisons.
+- Rule-based action items with one-tap filtered lists and WhatsApp templates; AI coach note.
+- Message templates + team settings; Web Push lead alerts; richer sample data.
+
+## Stage 4 — Instagram / YouTube content (branch `stage-4-content`)
 1. **Weekly content plan**: 7 post/reel ideas from what's actually happening (stock changes, demand, site progress), captions + hashtags in Hindi/English, RERA stamp check.
 2. **Reel / Short scripts**: 30-second scripts + shot lists for the builder's phone; YouTube title/description/tags.
 3. **Story cards**: auto-generated PNG cards (availability snapshot, "only N east-facing left", plot highlight) rendered in the browser with RERA number.

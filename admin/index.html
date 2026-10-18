@@ -53,6 +53,8 @@
                     </summary>
                     <div class="menu-list">
                         <a href="/" target="_blank" rel="noopener" data-t="viewSite"></a>
+                        <button type="button" id="menu-alerts" data-t="menuAlerts"></button>
+                        <button type="button" id="menu-settings" data-t="menuSettings"></button>
                         <button type="button" id="menu-demo"></button>
                         <button type="button" id="logout" data-t="signOut"></button>
                     </div>
@@ -68,6 +70,11 @@
         </nav>
         <main class="content" id="content"></main>
     </div>
+
+    <!-- Settings: my name, team, message templates -->
+    <dialog id="settings" class="sheet-dialog">
+        <div class="sheet-card" id="settings-body"></div>
+    </dialog>
 
     <!-- Plot / flat stock editor -->
     <dialog id="unit" class="sheet-dialog">

@@ -164,11 +164,36 @@ export function generateDemo({ plots, now = Date.now(), seed = 2026 }) {
             follow = r < 0.16 ? ymd(-1 - Math.floor(rand() * 5)) : r < 0.3 ? ymd(0) : r < 0.72 ? ymd(1 + Math.floor(rand() * 9)) : null;
         }
         const name = `${pick(FIRST)} ${pick(LAST)}`;
+        // CRM facts: how fast they were called, what happened at the site, why they said no
+        const c0 = Date.parse(created);
+        const stageIdx = ['new', 'contacted', 'site_visit', 'negotiation', 'booked'].indexOf(status);
+        const firstContact = status === 'new' ? null : new Date(Math.min(now - 60000, c0 + weighted([[0.4, 35], [6, 20], [20, 20], [50, 15], [96, 10]]) * 3600000 * (0.5 + rand()))).toISOString();
+        const lostFrom = status === 'lost' ? weighted([['new', 20], ['contacted', 45], ['site_visit', 25], ['negotiation', 10]]) : null;
+        const lostReason = status === 'lost' ? weighted([['budget', 38], ['location', 14], ['no_response', 16], ['bought_elsewhere', 10], ['wants_ready', 8], ['loan', 6], ['timing', 5], ['other', 3]]) : null;
+        const reachedVisit = stageIdx >= 2 || lostFrom === 'site_visit' || lostFrom === 'negotiation';
+        let visitAt = null, visitOutcome = null;
+        if (reachedVisit) {
+            visitAt = new Date(Math.min(now - 3600000, Date.parse(firstContact || created) + (1 + rand() * 6) * DAY_MS)).toISOString();
+            visitOutcome = weighted([['done', 68], ['no_show', 24], ['scheduled', 8]]);
+            if (visitOutcome === 'no_show' && stageIdx >= 3) visitOutcome = 'done';
+        } else if (status === 'contacted' && rand() < 0.25) {
+            visitAt = new Date(now + (1 + rand() * 5) * DAY_MS).toISOString(); visitOutcome = 'scheduled';
+        }
+        const assigned = weighted([['Ramesh', 40], ['Suresh', 35], [null, 25]]);
+        const acts = [];
+        if (firstContact) {
+            if (rand() < 0.35) acts.push({ type: 'call', outcome: 'no_answer', created_at: new Date(Date.parse(firstContact) - 3600000 * (1 + rand() * 5)).toISOString() });
+            acts.push({ type: 'call', outcome: 'answered', created_at: firstContact });
+            if (rand() < 0.6) acts.push({ type: 'whatsapp', outcome: null, created_at: new Date(Math.min(now - 30000, Date.parse(firstContact) + 600000)).toISOString() });
+        }
+        if (visitAt && Date.parse(visitAt) < now) acts.push({ type: 'visit', outcome: visitOutcome === 'scheduled' ? 'scheduled' : visitOutcome, created_at: visitAt });
         leads.push({
             name, phone, interested_plot: top, message: pick(MESSAGES),
             status, notes: note ? note.replace('{plot}', /^[A-C]-/.test(top) ? `apartment ${top}` : `Plot ${top}`) : null,
             enquiries: 1 + (rand() < 0.35 ? 1 : 0) + (rand() < 0.12 ? 1 : 0),
             source: v.source, follow_up: follow, created_at: created, updated_at: updated,
+            first_contact_at: firstContact, stage_changed_at: updated, lost_from: lostFrom, lost_reason: lostReason,
+            visit_at: visitAt, visit_outcome: visitOutcome, assigned_to: assigned, activities: acts,
         });
         v.lead_phone = phone;
         ev(v.id, 'lead', Date.parse(created), top);

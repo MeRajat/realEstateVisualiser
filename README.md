@@ -23,6 +23,17 @@ The dashboard has three tabs: **Today**, **Stock** and **Customers**.
 - **Excel**: download the stock list, or upload a CSV with columns `Plot, Status, Price (lakh), Note` to update many plots at once.
 - Booking a customer by mobile number also creates / updates their card in Customers (source "Walk-in / phone").
 
+## CRM — where customers drop off (Stage 3)
+
+The **Customers** tab is a phone-first CRM in the spirit of Privyr, built for plots and flats:
+
+- **Pipeline with drop-off**: New → Called → Site visit → Talking price → Booked for the last 30 days, with the conversion at each step. The weakest step is highlighted, with how many are waiting too long or were lost at each stage, speed to first call, no-show rate, and why customers said no (lost reasons).
+- **What to do now**: action items found from your own numbers (uncalled leads, the biggest leak, stuck customers, no-shows, overdue call-backs, lost reasons, best vs worst source, team call-back speed). Each has a button that opens exactly those customers, often with a ready WhatsApp message. With an AI key, a short coach note is added.
+- **One-tap work on a customer**: log a call (answered / no answer / busy — a missed call sets a reminder for tomorrow), send a WhatsApp template with the name and plot filled in, schedule a site visit (becomes the follow-up date), mark came / no-show, mark lost with a reason, assign to a salesperson. Everything lands in the customer's timeline.
+- **Message templates** (English + Hindi) and the sales team are edited under the menu → *Messages & team*.
+- **Instant lead alerts** on the builder's phone (menu → *Get alerts on this phone*) via Web Push. Needs `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (`npx web-push generate-vapid-keys`) and `VAPID_SUBJECT`. Alerts fire for new website leads, Facebook / Instagram form leads, and WhatsApp customers who want to talk or booked a visit.
+- Sample data (menu → *Show sample data*) now includes calls, visits, no-shows and lost reasons so the pipeline and action items can be explored.
+
 ## Ads & WhatsApp — Stage 2
 
 The **Ads** tab connects marketing to the CRM:
@@ -76,6 +87,10 @@ api/                     Vercel serverless functions
   admin/inventory.js     stock: list, change status / price / hold, history, Excel upload
   admin/ai.js            assistant: ask about stock, morning note, ad copy (Claude, with plain fallbacks)
   admin/marketing.js     campaigns, ad spend, WhatsApp threads, sandbox chat, setup status
+  admin/insights.js      drop-off funnel, speed to contact, lost reasons, no-shows, action items (+ AI coach note)
+  admin/activity.js      log calls / WhatsApp / visits per lead (moves the pipeline)
+  admin/settings.js      message templates, team, builder's name
+  admin/push.js          phone alert subscriptions (Web Push)
   webhooks/meta.js       Facebook / Instagram lead ads → lead cards
   webhooks/whatsapp.js   WhatsApp Cloud API → AI assistant → lead cards
   admin/session.js       sign in / out (signed HttpOnly cookie)

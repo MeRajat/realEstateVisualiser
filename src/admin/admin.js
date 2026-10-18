@@ -5,6 +5,7 @@ import { SITE, plots, features, boundary } from '../shared/site.js';
 import { t, getLang, setLang, sourceName, locale } from './i18n.js';
 import { createStock } from './stock.js';
 import { createMarketing } from './marketing.js';
+import { renderPipeline, renderActions, describeFilter, matchesListFilter, fillTemplate, waUrl, enableAlerts, LOST_REASONS } from './crm.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
@@ -13,7 +14,9 @@ const STAGES = ['new', 'contacted', 'site_visit', 'negotiation', 'booked', 'lost
 const ACTIVE = ['new', 'contacted', 'site_visit', 'negotiation'];
 const DAY = 86400000;
 
-const ui = { days: 7, stage: 'all', search: '', plot: null, showAllCalls: false, shown: 20, tab: 'today' };
+const ui = { days: 7, stage: 'all', search: '', plot: null, showAllCalls: false, shown: 20, tab: 'today', listFilter: null, template: null };
+let insights = null;
+let settings = { templates: [], team: [], me: '' };
 const brief = { text: '', ai: null, loading: false, key: '' };
 let stats = null;
 let leads = [];
@@ -48,8 +51,12 @@ function score(l) {
 }
 const isHot = (l) => ACTIVE.includes(l.status) && score(l) >= 14;
 
-const waLink = (l) => `https://wa.me/91${l.phone}?text=${encodeURIComponent(
-    `Namaste ${l.name.split(' ')[0]} ji, thank you for your interest in ${SITE.name}${l.interested_plot ? ` (${isApartment(l.interested_plot) ? 'Flat' : 'Plot'} ${l.interested_plot})` : ''}.`)}`;
+const tplById = (id) => settings.templates.find(x => x.id === id) || settings.templates[0];
+const waLink = (l, tplId = ui.template || 'first') => {
+    const tpl = tplById(tplId);
+    const text = tpl ? fillTemplate(tpl, l, settings) : `Namaste ${l.name.split(' ')[0]} ji, thank you for your interest in ${SITE.name}.`;
+    return waUrl(l, text);
+};
 
 const ICON = {
     call: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z" fill="currentColor"/></svg>',
@@ -155,11 +162,19 @@ let lastLoaded = 0;
 async function load({ quiet = false } = {}) {
     document.body.classList.add('is-loading');
     try {
-        const [s, l] = await Promise.all([api(`/api/admin/stats?days=${ui.days}`), api('/api/admin/leads'), stock.load(7)]);
+        const [s, l, , st] = await Promise.all([
+            api(`/api/admin/stats?days=${ui.days}`), api('/api/admin/leads'), stock.load(7),
+            api('/api/admin/settings').catch(() => null),
+        ]);
         stats = s;
         leads = l.leads;
+        if (st) settings = st.settings;
         lastLoaded = Date.now();
         render();
+        // Insights (and the AI coach note) can take a few seconds: show the page first, then fill them in
+        api(`/api/admin/insights?days=30&coach=1&lang=${getLang()}`).then(ins => { insights = ins; if (ui.tab === 'today' || ui.tab === 'customers') render(); }).catch(() => {});
+        const wanted = Number(new URLSearchParams(location.search).get('lead'));
+        if (wanted && !dialog.open && leads.some(l => l.id === wanted)) { history.replaceState(null, '', location.pathname); openCustomer(wanted); }
     } catch (err) {
         if (!quiet && err.message !== 'signed-out') toast(err.message);
     } finally {
@@ -186,6 +201,7 @@ $('refresh').addEventListener('click', () => load());
 function render() {
     updateStamp();
     const s = stats;
+    if (!s) return;
     const hasAnything = s.totals.leadsAll > 0 || s.totals.visitors > 0 || s.hasDemo;
     $('menu-demo').textContent = s.hasDemo ? t('demoRemove') : t('demoLoad');
     document.querySelectorAll('[data-tab]').forEach(b => {
@@ -209,6 +225,9 @@ function render() {
     if (ui.tab === 'customers') {
         $('content').innerHTML = `${demoBanner}
             ${hasAnything ? `
+            ${renderPipeline(insights)}
+            ${renderActions(insights)}
+            <section class="card" id="customers">${renderCustomersShell()}</section>
             <section class="card" id="plots">
                 <h2>${t('plotsTitle')}</h2><p class="help">${t('plotsHelp')}</p>
                 <div class="plots-layout"><div class="plan" id="plan"></div><div>${renderPopular()}</div></div>
@@ -217,7 +236,6 @@ function render() {
                 ${renderSources()}
                 ${renderJourney()}
             </div>
-            <section class="card" id="customers">${renderCustomersShell()}</section>
             ` : renderEmpty()}`;
         if (hasAnything) { drawPlan(); renderCustomerList(); }
         return;
@@ -230,6 +248,7 @@ function render() {
         ${renderBrief()}
         ${hasAnything ? `
             ${renderCalls()}
+            ${insights?.actions?.length ? renderActions(insights, { limit: 3, title: t('actionsToday') }) : ''}
             ${renderKpis()}
             <section class="card" id="daily">
                 <h2>${t('dailyTitle')}</h2><p class="help">${t('dailyHelp')}</p>
@@ -549,13 +568,15 @@ function renderCustomersShell() {
             <input type="search" id="search" placeholder="${esc(t('search'))}" value="${esc(ui.search)}" aria-label="${esc(t('search'))}">
         </label>
         <div class="chips scroll" id="stage-chips"></div>
+        <div id="list-banner"></div>
         <ul class="customer-list" id="customer-list"></ul>`;
 }
 
 function filteredLeads() {
     const q = ui.search.toLowerCase().replace(/\s/g, '');
     return leads.filter(l => {
-        if (ui.stage === 'hot' ? !isHot(l) : ui.stage !== 'all' && l.status !== ui.stage) return false;
+        if (ui.listFilter) { if (!matchesListFilter(l, ui.listFilter, insights)) return false; }
+        else if (ui.stage === 'hot' ? !isHot(l) : ui.stage !== 'all' && l.status !== ui.stage) return false;
         if (ui.plot && l.interested_plot !== ui.plot && !(l.plots_viewed || []).some(p => p.plot === ui.plot)) return false;
         if (!q) return true;
         return l.name.toLowerCase().replace(/\s/g, '').includes(q) || l.phone.includes(q)
@@ -566,11 +587,17 @@ function filteredLeads() {
 function renderCustomerList() {
     const counts = { all: leads.length, hot: leads.filter(isHot).length };
     STAGES.forEach(s => { counts[s] = leads.filter(l => l.status === s).length; });
+    const quick = [['untouched', { untouched: true }], ['overdue', { overdue: true }], ['stuck', { stuck: true }], ['visitPending', { visitPending: true }]]
+        .map(([k, f]) => ({ k, f, n: leads.filter(l => matchesListFilter(l, f, insights)).length })).filter(x => x.n);
     $('stage-chips').innerHTML = [
         ...(ui.plot ? [`<button type="button" class="chip is-active picked" data-act="clear-plot">${what(ui.plot)} ${ICON.close}</button>`] : []),
-        ...['all', 'hot', ...STAGES].map(s => `<button type="button" class="chip${ui.stage === s ? ' is-active' : ''}" data-stage="${s}">
+        ...(ui.listFilter ? [`<button type="button" class="chip is-active picked" data-act="clear-filter">${esc(describeFilter(ui.listFilter))} ${ICON.close}</button>`] : []),
+        ...['all', 'hot', ...STAGES].map(s => `<button type="button" class="chip${!ui.listFilter && ui.stage === s ? ' is-active' : ''}" data-stage="${s}">
             ${s === 'all' ? t('all') : s === 'hot' ? `🔥 ${t('hot')}` : `<i class="dot st-${s}"></i>${t(`stage_${s}`)}`}<small>${counts[s]}</small></button>`),
+        ...quick.map(({ k, f, n }) => `<button type="button" class="chip warn" data-list-filter='${JSON.stringify(f)}'>${t(`f_${k}`)}<small>${n}</small></button>`),
     ].join('');
+    const tpl = ui.template ? tplById(ui.template) : null;
+    $('list-banner').innerHTML = tpl ? `<div class="banner soft"><span>${t('templateBanner', { name: esc(tpl.name) })}</span><button type="button" class="btn btn-text" data-act="clear-template">${t('close')}</button></div>` : '';
     const list = filteredLeads().sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
     const today = todayStr();
     $('customer-list').innerHTML = list.length ? list.slice(0, ui.shown).map(l => `<li>
@@ -579,12 +606,13 @@ function renderCustomerList() {
             <span class="who-text">
                 <b>${esc(l.name)}${isHot(l) ? ' 🔥' : ''}</b>
                 <span>${prettyPhone(l.phone)}${l.interested_plot ? ` · ${what(l.interested_plot)}` : ''}${l.cp ? ` · ${t('viaBroker', { name: esc(l.cp) })}` : ''}${['facebook', 'instagram', 'whatsapp'].includes(l.source) ? ` · ${esc(sourceName(l.source))}${l.campaign ? ` (${esc(l.campaign)})` : ''}` : ''}</span>
-                <span class="small">${l.follow_up && ACTIVE.includes(l.status)
+                <span class="small">${l.visit_at && l.visit_outcome === 'scheduled' && Date.parse(l.visit_at) >= Date.now() ? `<span class="visit-tag">📍 ${t('visitOn', { date: new Date(l.visit_at).toLocaleString(locale(), { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) })}</span> · ` : ''}${l.follow_up && ACTIVE.includes(l.status)
                     ? `<span class="${l.follow_up < today ? 'late' : ''}">${ICON.clock} ${t('callOn', { date: prettyDate(l.follow_up) })}</span>`
-                    : t('lastSeen', { time: ago(l.last_seen || l.updated_at) })}</span>
+                    : t('lastSeen', { time: ago(l.last_activity_at || l.last_seen || l.updated_at) })}${l.status === 'new' && !l.touches ? ` · <span class="late">${t('noCallYet')}</span>` : l.calls ? ` · ${t('callsN', { n: l.calls })}` : ''}${l.assigned_to ? ` · 👤 ${esc(l.assigned_to)}` : ''}</span>
             </span>
             <span class="stage st-${l.status}">${t(`stage_${l.status}`)}</span>
         </button>
+        <a class="row-wa" href="${waLink(l)}" target="_blank" rel="noopener" data-wa-log="${l.id}" aria-label="WhatsApp">${ICON.wa}</a>
     </li>`).join('') + (list.length > ui.shown
         ? `<li class="show-more"><button type="button" class="btn btn-outline" data-act="more">${t('showMore', { n: fmt(list.length - ui.shown) })}</button></li>` : '')
         : !leads.length && !stats.hasDemo
@@ -599,8 +627,10 @@ let current = null;
 async function openCustomer(id) {
     const l = leads.find(x => x.id === id);
     if (!l) return;
-    current = { id, status: l.status, follow_up: l.follow_up || '' };
+    current = { id, status: l.status, follow_up: l.follow_up || '', lost_reason: l.lost_reason || '', assigned_to: l.assigned_to || '' };
     const viewed = l.plots_viewed || [];
+    const visitPast = l.visit_at && Date.parse(l.visit_at) < Date.now() && (!l.visit_outcome || l.visit_outcome === 'scheduled');
+    const visitSoon = l.visit_at && Date.parse(l.visit_at) >= Date.now() && l.visit_outcome === 'scheduled';
     $('customer-body').innerHTML = `
         <header class="sheet-head">
             <span class="avatar lg" aria-hidden="true">${initial(l.name)}</span>
@@ -610,12 +640,28 @@ async function openCustomer(id) {
             <button type="button" class="btn btn-ghost icon-only" data-act="close" aria-label="${esc(t('close'))}">${ICON.close}</button>
         </header>
         <div class="contact">
-            <a class="btn btn-primary btn-lg" href="tel:+91${l.phone}">${ICON.call}${t('call')}</a>
-            <a class="btn btn-tonal btn-lg" href="${waLink(l)}" target="_blank" rel="noopener">${ICON.wa}${t('whatsapp')}</a>
+            <a class="btn btn-primary btn-lg" href="tel:+91${l.phone}" data-call-start>${ICON.call}${t('call')}</a>
+            <button type="button" class="btn btn-tonal btn-lg" data-act="wa-pick">${ICON.wa}${t('whatsapp')}</button>
         </div>
+        <section class="quick"><h3>${t('logCall')}</h3>
+            <div class="chips">${[['answered', 'callAnswered'], ['no_answer', 'callNoAnswer'], ['busy', 'callBusy']].map(([o, k]) => `<button type="button" class="chip" data-log-call="${o}">${t(k)}</button>`).join('')}</div>
+            <div class="chips" id="wa-templates" hidden>${settings.templates.map(x => `<a class="chip" href="${waLink(l, x.id)}" target="_blank" rel="noopener" data-wa-template="${esc(x.id)}">${ICON.wa} ${esc(x.name)}</a>`).join('')}</div>
+        </section>
+        <section><h3>${t('siteVisit')}</h3>
+            ${visitPast ? `<p class="help">${t('visitWas', { date: new Date(l.visit_at).toLocaleString(locale(), { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) })}</p>
+                <div class="chips"><button type="button" class="chip" data-visit="done">✓ ${t('visitCame')}</button><button type="button" class="chip" data-visit="no_show">✕ ${t('visitNoShow')}</button></div>`
+            : visitSoon ? `<p class="help">📍 ${t('visitOn', { date: new Date(l.visit_at).toLocaleString(locale(), { weekday: 'long', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) })}</p>
+                <div class="chips"><a class="chip" href="${waLink(l, 'reminder')}" target="_blank" rel="noopener" data-wa-template="reminder">${ICON.wa} ${t('sendReminder')}</a><button type="button" class="chip" data-visit="cancelled">${t('visitCancel')}</button></div>`
+            : `<div class="visit-row"><input type="datetime-local" id="visit-at" aria-label="${esc(t('siteVisit'))}"><button type="button" class="btn btn-outline btn-sm" data-act="visit-schedule">${t('visitSchedule')}</button></div>
+               ${l.visit_outcome === 'done' ? `<p class="help">✓ ${t('visitDoneOn', { date: new Date(l.visit_at).toLocaleDateString(locale(), { day: 'numeric', month: 'short' }) })}</p>` : l.visit_outcome === 'no_show' ? `<p class="help">✕ ${t('visitNoShowOn', { date: new Date(l.visit_at).toLocaleDateString(locale(), { day: 'numeric', month: 'short' }) })}</p>` : ''}`}
+        </section>
         <section><h3>${t('stage')}</h3>
             <div class="stage-grid">${STAGES.map(s => `<button type="button" class="stage-btn${s === l.status ? ' is-active' : ''}" data-stage-set="${s}" aria-pressed="${s === l.status}"><i class="dot st-${s}"></i>${t(`stage_${s}`)}</button>`).join('')}</div>
+            <div class="chips" id="lost-reasons" ${l.status === 'lost' ? '' : 'hidden'}>${LOST_REASONS.map(r => `<button type="button" class="chip${current.lost_reason === r ? ' is-active' : ''}" data-lost="${r}">${t(`lost_${r}`)}</button>`).join('')}</div>
         </section>
+        ${settings.team.length ? `<section><h3>${t('assignedTo')}</h3>
+            <div class="chips" id="assign-chips">${['', ...settings.team].map(n => `<button type="button" class="chip${current.assigned_to === n ? ' is-active' : ''}" data-assign="${esc(n)}">${n ? esc(n) : t('nobody')}</button>`).join('')}</div>
+        </section>` : ''}
         <section><h3>${t('callAgain')}</h3>
             <div class="chips" id="follow-chips"></div>
             <input type="date" id="follow-date" class="date" aria-label="${esc(t('callAgain'))}">
@@ -644,13 +690,32 @@ async function openCustomer(id) {
         $('wa-thread').scrollTop = 1e6;
     }).catch(() => {});
     try {
-        const { timeline } = await api(`/api/admin/leads?id=${id}`);
+        const { timeline, activities = [] } = await api(`/api/admin/leads?id=${id}`);
         const MODE = { '3d': '3D', map: 'Map', nearby: 'Nearby', plan: 'Plan' };
-        $('timeline').innerHTML = timeline.filter(e => e.type !== 'view_mode' || e.detail).slice(0, 12).map(e => `<li>
-            <span class="tl-dot" aria-hidden="true"></span>
-            <span>${t(`ev_${e.type}`, { what: e.type === 'view_mode' ? esc(MODE[e.detail] || e.detail) : what(e.plot_id) || '—' })}</span>
-            <small>${ago(e.created_at)}</small></li>`).join('') || '<li class="help">—</li>';
+        const rows = [
+            ...activities.map(a => ({ at: a.created_at, html: activityText(a) })),
+            ...timeline.filter(e => e.type !== 'view_mode' || e.detail).map(e => ({ at: e.created_at, html: t(`ev_${e.type}`, { what: e.type === 'view_mode' ? esc(MODE[e.detail] || e.detail) : what(e.plot_id) || '—' }) })),
+        ].sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 16);
+        $('timeline').innerHTML = rows.map(r => `<li><span class="tl-dot" aria-hidden="true"></span><span>${r.html}</span><small>${ago(r.at)}</small></li>`).join('') || '<li class="help">—</li>';
     } catch { $('timeline').innerHTML = ''; }
+}
+
+function activityText(a) {
+    switch (a.type) {
+        case 'call': return `📞 ${t(`act_call_${a.outcome || 'answered'}`)}${a.note ? ` · ${esc(a.note)}` : ''}`;
+        case 'whatsapp': return `💬 ${t('act_whatsapp', { name: esc(a.note || '') })}`;
+        case 'visit': return `📍 ${t(`act_visit_${a.outcome}`)}`;
+        case 'status': return `${t('act_status', { stage: t(`stage_${a.outcome}`) })}${a.note ? ` · ${t(`lost_${a.note}`)}` : ''}`;
+        case 'assign': return `👤 ${a.outcome ? t('act_assign', { name: esc(a.outcome) }) : t('act_unassign')}`;
+        default: return esc(a.note || a.type);
+    }
+}
+
+async function logActivity(payload) {
+    const r = await api('/api/admin/activity', { method: 'POST', body: JSON.stringify({ leadId: current.id, actor: settings.me || 'builder', ...payload }) });
+    const i = leads.findIndex(x => x.id === current.id);
+    if (i >= 0) leads[i] = { ...leads[i], ...r.lead, calls: (leads[i].calls || 0) + (payload.type === 'call' ? 1 : 0), touches: (leads[i].touches || 0) + 1, last_activity_at: new Date().toISOString() };
+    return r;
 }
 
 function renderFollowChips() {
@@ -670,16 +735,48 @@ dialog.addEventListener('click', async (e) => {
             b.setAttribute('aria-pressed', b === stageBtn);
         });
         if (['booked', 'lost'].includes(current.status)) { current.follow_up = ''; renderFollowChips(); }
+        $('lost-reasons').hidden = current.status !== 'lost';
         return;
     }
     const f = e.target.closest('[data-follow]');
     if (f) { current.follow_up = f.dataset.follow; renderFollowChips(); return; }
+    const lost = e.target.closest('[data-lost]');
+    if (lost) { current.lost_reason = lost.dataset.lost; dialog.querySelectorAll('[data-lost]').forEach(b => b.classList.toggle('is-active', b === lost)); return; }
+    const asg = e.target.closest('[data-assign]');
+    if (asg) { current.assigned_to = asg.dataset.assign; dialog.querySelectorAll('[data-assign]').forEach(b => b.classList.toggle('is-active', b === asg)); return; }
+    const call = e.target.closest('[data-log-call]');
+    if (call) {
+        const outcome = call.dataset.logCall;
+        call.disabled = true;
+        try {
+            const r = await logActivity({ type: 'call', outcome });
+            current.status = r.lead.status;
+            if (outcome !== 'answered' && !current.follow_up) { current.follow_up = addDays(todayStr(), 1); await updateLead(current.id, { follow_up: current.follow_up }); }
+            toast(outcome === 'answered' ? t('loggedAnswered') : t('loggedNoAnswer'));
+            openCustomer(current.id);
+        } catch (err) { toast(err.message); call.disabled = false; }
+        return;
+    }
+    const wt = e.target.closest('[data-wa-template]');
+    if (wt) { logActivity({ type: 'whatsapp', note: tplById(wt.dataset.waTemplate)?.name || '' }).then(() => render()).catch(() => {}); return; }
+    const vis = e.target.closest('[data-visit]');
+    if (vis) {
+        try { await logActivity({ type: 'visit', outcome: vis.dataset.visit }); toast(t('saved')); openCustomer(current.id); render(); } catch (err) { toast(err.message); }
+        return;
+    }
     const actEl = e.target.closest('[data-act]');
     if (actEl?.dataset.act === 'close') dialog.close();
+    if (actEl?.dataset.act === 'wa-pick') { const box = $('wa-templates'); box.hidden = !box.hidden; return; }
+    if (actEl?.dataset.act === 'visit-schedule') {
+        const v = $('visit-at').value;
+        if (!v) return toast(t('pickVisitTime'));
+        try { await logActivity({ type: 'visit', outcome: 'scheduled', at: new Date(v).toISOString() }); toast(t('visitScheduled')); openCustomer(current.id); render(); } catch (err) { toast(err.message); }
+        return;
+    }
     if (actEl?.dataset.act === 'save') {
         actEl.disabled = true;
         try {
-            await updateLead(current.id, { status: current.status, notes: $('notes').value, follow_up: current.follow_up || null });
+            await updateLead(current.id, { status: current.status, notes: $('notes').value, follow_up: current.follow_up || null, lost_reason: current.status === 'lost' ? (current.lost_reason || null) : null, assigned_to: current.assigned_to || null, actor: settings.me || 'builder' });
             dialog.close();
             toast(t('saved'));
         } catch (err) { toast(err.message); } finally { actEl.disabled = false; }
@@ -707,8 +804,16 @@ dialog.addEventListener('submit', async (e) => {
 async function updateLead(id, patch) {
     await api('/api/admin/leads', { method: 'PATCH', body: JSON.stringify({ id, ...patch }) });
     const l = leads.find(x => x.id === id);
-    if (l) Object.assign(l, patch);
+    if (l) { const { actor, ...rest } = patch; Object.assign(l, rest); }
     render();
+    refreshInsights();
+}
+let insightsTimer;
+function refreshInsights() {
+    clearTimeout(insightsTimer);
+    insightsTimer = setTimeout(async () => {
+        try { insights = await api(`/api/admin/insights?days=30&lang=${getLang()}`); if (ui.tab !== 'stock' && ui.tab !== 'marketing') render(); } catch { /* keep old */ }
+    }, 400);
 }
 
 // ─── Page-level actions ──────────────────────────────
@@ -726,7 +831,21 @@ $('content').addEventListener('click', async (e) => {
         return;
     }
     const stage = e.target.closest('[data-stage]');
-    if (stage) { ui.stage = stage.dataset.stage; ui.shown = 20; renderCustomerList(); return; }
+    if (stage) { ui.stage = stage.dataset.stage; ui.listFilter = null; ui.shown = 20; renderCustomerList(); return; }
+    const lf = e.target.closest('[data-list-filter]');
+    if (lf) {
+        ui.listFilter = JSON.parse(lf.dataset.listFilter);
+        ui.template = lf.dataset.template || null;
+        ui.stage = 'all'; ui.shown = 20;
+        if (ui.tab !== 'customers') { ui.tab = 'customers'; render(); }
+        else renderCustomerList();
+        $('customers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+    }
+    const go = e.target.closest('[data-go-tab]');
+    if (go) { ui.tab = go.dataset.goTab; if (ui.tab === 'marketing') marketing.load().catch(() => {}).finally(render); else render(); window.scrollTo({ top: 0 }); return; }
+    const wl = e.target.closest('[data-wa-log]');
+    if (wl) { const id = Number(wl.dataset.waLog); api('/api/admin/activity', { method: 'POST', body: JSON.stringify({ leadId: id, type: 'whatsapp', note: tplById(ui.template || 'first')?.name || '', actor: settings.me || 'builder' }) }).then(() => { const l = leads.find(x => x.id === id); if (l) { l.touches = (l.touches || 0) + 1; l.last_activity_at = new Date().toISOString(); } }).catch(() => {}); return; }
     const btn = e.target.closest('[data-act]');
     if (!btn) return;
     const id = Number(btn.dataset.id);
@@ -744,6 +863,8 @@ $('content').addEventListener('click', async (e) => {
                 break;
             case 'calls-toggle': ui.showAllCalls = !ui.showAllCalls; render(); break;
             case 'clear-plot': ui.plot = null; renderCustomerList(); break;
+            case 'clear-filter': ui.listFilter = null; ui.template = null; renderCustomerList(); break;
+            case 'clear-template': ui.template = null; renderCustomerList(); break;
             case 'more': ui.shown += 20; renderCustomerList(); break;
             case 'export': exportCsv(); break;
             case 'demo-load': loadDemo(btn); break;
@@ -767,6 +888,44 @@ $('tabs-nav').addEventListener('click', (e) => {
     if (ui.tab === 'marketing') marketing.load().catch(err => toast(err.message)).finally(render);
     else render();
     window.scrollTo({ top: 0 });
+});
+
+$('menu-alerts').addEventListener('click', async () => {
+    document.querySelector('.menu').open = false;
+    try { await enableAlerts(api); toast(t('alertsOn')); } catch (err) { toast(err.message); }
+});
+$('menu-settings').addEventListener('click', () => { document.querySelector('.menu').open = false; openSettings(); });
+
+// ─── Settings: my name, team, message templates ─────
+function openSettings() {
+    const d = $('settings');
+    $('settings-body').innerHTML = `
+        <header class="sheet-head"><div class="who-text"><h2>${t('settingsTitle')}</h2><span>${t('settingsHelp', { me: '{me}' })}</span></div>
+            <button type="button" class="btn btn-ghost icon-only" data-settings-act="close" aria-label="${esc(t('close'))}">${ICON.close}</button></header>
+        <section><label class="field"><span>${t('myName')}</span><input id="set-me" maxlength="40" value="${esc(settings.me || '')}" placeholder="${esc(t('myNameHint'))}"></label></section>
+        <section><label class="field"><span>${t('teamNames')}</span><input id="set-team" maxlength="300" value="${esc((settings.team || []).join(', '))}" placeholder="Ramesh, Suresh"></label><p class="help">${t('teamHelp')}</p></section>
+        <section><h3>${t('templatesTitle')}</h3><p class="help">${t('templatesHelp', { name: '{name}', site: '{site}', me: '{me}', plot_line: '{plot_line}', link: '{link}' })}</p>
+            <div id="set-templates">${settings.templates.map((x, i) => `<div class="tpl" data-i="${i}">
+                <input class="tpl-name" maxlength="40" value="${esc(x.name)}" aria-label="Name"><input type="hidden" class="tpl-id" value="${esc(x.id)}">
+                <textarea class="tpl-en" rows="3" maxlength="1000" placeholder="English">${esc(x.en)}</textarea>
+                <textarea class="tpl-hi" rows="3" maxlength="1000" placeholder="हिंदी">${esc(x.hi)}</textarea>
+            </div>`).join('')}</div>
+        </section>
+        <footer class="sheet-foot"><button type="button" class="btn btn-primary btn-lg" data-settings-act="save">${t('save')}</button></footer>`;
+    d.showModal();
+}
+$('settings').addEventListener('click', async (e) => {
+    const d = $('settings');
+    if (e.target === d) return d.close();
+    const act = e.target.closest('[data-settings-act]')?.dataset.settingsAct;
+    if (act === 'close') d.close();
+    if (act === 'save') {
+        const templates = [...d.querySelectorAll('.tpl')].map(x => ({ id: x.querySelector('.tpl-id').value, name: x.querySelector('.tpl-name').value, en: x.querySelector('.tpl-en').value, hi: x.querySelector('.tpl-hi').value }));
+        try {
+            const r = await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify({ me: $('set-me').value, team: $('set-team').value.split(',').map(x => x.trim()).filter(Boolean), templates }) });
+            settings = r.settings; d.close(); toast(t('saved')); render();
+        } catch (err) { toast(err.message); }
+    }
 });
 
 $('menu-demo').addEventListener('click', (e) => {

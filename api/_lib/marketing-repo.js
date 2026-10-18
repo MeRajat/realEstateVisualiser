@@ -76,8 +76,8 @@ export function marketingPg(sql, migrate) {
                                   else leads.status end,
                     enquiries = leads.enquiries + 1,
                     updated_at = now()
-                returning id, name, status, interested_plot, notes, ai_summary`;
-            return { ...lead, id: Number(lead.id) };
+                returning id, name, status, interested_plot, notes, ai_summary, (xmax = 0) as created`;
+            return { ...lead, id: Number(lead.id), created: !!lead.created };
         },
     };
 }
@@ -163,7 +163,7 @@ export function marketingMemory(store) {
                     ai_summary: aiSummary || null, follow_up: followUp || null, is_demo: false, cp: null };
                 leads.push(lead);
             }
-            return { id: lead.id, name: lead.name, status: lead.status, interested_plot: lead.interested_plot, notes: lead.notes, ai_summary: lead.ai_summary };
+            return { id: lead.id, name: lead.name, status: lead.status, interested_plot: lead.interested_plot, notes: lead.notes, ai_summary: lead.ai_summary, created: lead.enquiries === 1 };
         },
     };
 }

@@ -1,6 +1,7 @@
 // POST /api/lead — customer submits name + mobile number.
 import { getRepo } from './_lib/db.js';
 import { route, send, readJson, badRequest, VISITOR_ID, PLOT_ID, cleanText, normalisePhone } from './_lib/http.js';
+import { leadAlert } from './_lib/push.js';
 
 export default route(['POST'], async (req, res) => {
     const body = await readJson(req);
@@ -20,5 +21,6 @@ export default route(['POST'], async (req, res) => {
         message: cleanText(body.message, 500),
         cp: cleanText(body.cp, 40),
     });
+    if (lead.created) leadAlert({ id: lead.id, name }, plotId ? `Interested in Plot ${plotId}` : 'Shared their number on the website').catch(() => {});
     send(res, 200, { ok: true, id: lead.id });
 });

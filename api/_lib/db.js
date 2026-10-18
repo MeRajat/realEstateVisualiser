@@ -4,6 +4,7 @@
 import { neon } from '@neondatabase/serverless';
 import { unitsPg, unitsMemory } from './units-repo.js';
 import { marketingPg, marketingMemory } from './marketing-repo.js';
+import { crmPg, crmMemory } from './crm-repo.js';
 
 const DB_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 const TZ = 'Asia/Kolkata';
@@ -133,6 +134,26 @@ export function pgRepo(sql) {
             created_at timestamptz not null default now()
         )`;
         await sql`create index if not exists wa_messages_phone_idx on wa_messages (phone, created_at desc)`;
+        // CRM (Stage 3): activity log, lost reasons, assignment, settings, push alerts
+        await sql`alter table leads add column if not exists lost_reason text`;
+        await sql`alter table leads add column if not exists lost_from text`;
+        await sql`alter table leads add column if not exists assigned_to text`;
+        await sql`alter table leads add column if not exists first_contact_at timestamptz`;
+        await sql`alter table leads add column if not exists stage_changed_at timestamptz`;
+        await sql`alter table leads add column if not exists visit_at timestamptz`;
+        await sql`alter table leads add column if not exists visit_outcome text`;
+        await sql`create table if not exists lead_activities (
+            id bigserial primary key,
+            lead_id bigint not null references leads(id) on delete cascade,
+            type text not null,
+            outcome text,
+            note text,
+            actor text,
+            created_at timestamptz not null default now()
+        )`;
+        await sql`create index if not exists lead_activities_lead_idx on lead_activities (lead_id, created_at desc)`;
+        await sql`create table if not exists settings (key text primary key, value jsonb not null, updated_at timestamptz not null default now())`;
+        await sql`create table if not exists push_subscriptions (endpoint text primary key, subscription jsonb not null, label text, created_at timestamptz not null default now())`;
         await sql`create index if not exists events_created_idx on events (created_at)`;
         await sql`create index if not exists events_visitor_idx on events (visitor_id)`;
         await sql`create index if not exists visitors_lead_idx on visitors (lead_id)`;
@@ -141,10 +162,12 @@ export function pgRepo(sql) {
 
     const units = unitsPg(sql, migrate);
     const marketing = marketingPg(sql, migrate);
+    const crm = crmPg(sql, migrate);
     return {
         kind: 'postgres',
         ...units,
         ...marketing,
+        ...crm,
 
         // A walk-in / phone customer the builder books directly (no website visit)
         async upsertOfflineLead({ name, phone, plotId, status, notes }) {
@@ -197,17 +220,18 @@ export function pgRepo(sql) {
                     campaign = coalesce(leads.campaign, excluded.campaign),
                     enquiries = leads.enquiries + 1,
                     updated_at = now()
-                returning id`;
+                returning id, (xmax = 0) as created`;
             await sql`insert into visitors (id, lead_id) values (${visitorId}, ${lead.id})
                 on conflict (id) do update set lead_id = ${lead.id}, last_seen = now()`;
             await sql`insert into events (visitor_id, type, plot_id) values (${visitorId}, 'lead', ${plotId})`;
-            return { id: Number(lead.id) };
+            return { id: Number(lead.id), created: !!lead.created };
         },
 
         async listLeads() {
             await migrate();
             const rows = await sql`select l.id, l.name, l.phone, l.interested_plot, l.message, l.status, l.notes,
                     l.enquiries, l.created_at, l.updated_at, coalesce(l.source, 'direct') as source, l.cp, l.campaign, l.email, l.ai_summary,
+                    l.lost_reason, l.lost_from, l.assigned_to, l.first_contact_at, coalesce(l.stage_changed_at, l.created_at) as stage_changed_at, l.visit_at, l.visit_outcome,
                     l.follow_up::text as follow_up, l.is_demo,
                     coalesce(v.visits, 0)::int as visits,
                     v.last_seen,
@@ -240,13 +264,23 @@ export function pgRepo(sql) {
                 order by e.created_at desc limit 40`;
         },
 
-        async updateLead(id, { status, notes, followUp }) {
+        async updateLead(id, { status, notes, followUp, lostReason, assignedTo, visitAt, visitOutcome }) {
             await migrate();
             const setFollow = followUp !== undefined;
+            const setAssign = assignedTo !== undefined;
+            const setVisit = visitAt !== undefined;
+            const setVisitOutcome = visitOutcome !== undefined;
             const rows = await sql`update leads set
+                    lost_from = case when ${status} = 'lost' and status <> 'lost' then status else lost_from end,
+                    lost_reason = case when ${status} = 'lost' then coalesce(${lostReason ?? null}, lost_reason) when ${status} is not null and ${status} <> 'lost' then null else lost_reason end,
+                    first_contact_at = case when ${status} is not null and ${status} <> 'new' and first_contact_at is null then now() else first_contact_at end,
+                    stage_changed_at = case when ${status} is not null and ${status} <> status then now() else coalesce(stage_changed_at, created_at) end,
                     status = coalesce(${status}, status),
                     notes = coalesce(${notes}, notes),
                     follow_up = case when ${setFollow} then ${setFollow ? followUp : null}::date else follow_up end,
+                    assigned_to = case when ${setAssign} then ${setAssign ? assignedTo : null} else assigned_to end,
+                    visit_at = case when ${setVisit} then ${setVisit ? visitAt : null}::timestamptz else visit_at end,
+                    visit_outcome = case when ${setVisitOutcome} then ${setVisitOutcome ? visitOutcome : null} when ${setVisit} then 'scheduled' else visit_outcome end,
                     updated_at = now()
                 where id = ${id} returning id`;
             return rows.length > 0;
@@ -323,13 +357,23 @@ export function pgRepo(sql) {
         async insertDemo({ leads, visitors, events }) {
             await migrate();
             await sql`insert into leads (name, phone, interested_plot, message, status, notes, enquiries, source,
-                        follow_up, created_at, updated_at, is_demo)
+                        follow_up, created_at, updated_at, first_contact_at, stage_changed_at, lost_from, lost_reason, visit_at, visit_outcome, assigned_to, is_demo)
                 select name, phone, interested_plot, message, status, notes, enquiries, source,
-                       follow_up, created_at, updated_at, true
-                from json_to_recordset(${JSON.stringify(leads)}::json) as x(
+                       follow_up, created_at, updated_at, first_contact_at, stage_changed_at, lost_from, lost_reason, visit_at, visit_outcome, assigned_to, true
+                from json_to_recordset(${JSON.stringify(leads.map(({ activities, ...l }) => l))}::json) as x(
                     name text, phone text, interested_plot text, message text, status text, notes text,
-                    enquiries int, source text, follow_up date, created_at timestamptz, updated_at timestamptz)
+                    enquiries int, source text, follow_up date, created_at timestamptz, updated_at timestamptz,
+                    first_contact_at timestamptz, stage_changed_at timestamptz, lost_from text, lost_reason text,
+                    visit_at timestamptz, visit_outcome text, assigned_to text)
                 on conflict (phone) do nothing`;
+            const acts = leads.flatMap(l => (l.activities || []).map(a => ({ phone: l.phone, ...a })));
+            for (let i = 0; i < acts.length; i += 2500) {
+                const chunk = JSON.stringify(acts.slice(i, i + 2500));
+                await sql`insert into lead_activities (lead_id, type, outcome, actor, created_at)
+                    select l.id, x.type, x.outcome, 'demo', x.created_at
+                    from json_to_recordset(${chunk}::json) as x(phone text, type text, outcome text, created_at timestamptz)
+                    join leads l on l.phone = x.phone and l.is_demo`;
+            }
             for (let i = 0; i < visitors.length; i += 2500) {
                 const chunk = JSON.stringify(visitors.slice(i, i + 2500));
                 await sql`insert into visitors (id, lead_id, first_seen, last_seen, visits, is_mobile, referrer, user_agent, source, is_demo)
@@ -415,11 +459,13 @@ function memoryRepo() {
     const units = unitsMemory();
     units._events = () => events;
     const marketing = marketingMemory(() => ({ visitors, events, leads, nextLeadId: () => nextLeadId++ }));
+    const crm = crmMemory();
 
     return {
         kind: 'memory',
         ...units,
         ...marketing,
+        ...crm,
 
         async upsertOfflineLead({ name, phone, plotId, status, notes }) {
             let lead = leads.find(l => l.phone === phone);
@@ -473,7 +519,7 @@ function memoryRepo() {
             }
             touch(visitorId).lead_id = lead.id;
             events.push({ visitor_id: visitorId, type: 'lead', plot_id: plotId, created_at: now() });
-            return { id: lead.id };
+            return { id: lead.id, created: lead.enquiries === 1 };
         },
 
         async listLeads() {
@@ -484,7 +530,9 @@ function memoryRepo() {
                 events.filter(e => ids.has(e.visitor_id) && e.type === 'plot_view' && e.plot_id)
                     .forEach(e => { counts[e.plot_id] = (counts[e.plot_id] || 0) + 1; });
                 return {
+                    lost_reason: null, lost_from: null, assigned_to: null, first_contact_at: null, visit_at: null, visit_outcome: null,
                     ...l,
+                    stage_changed_at: l.stage_changed_at || l.created_at,
                     visits: vs.reduce((s, v) => s + v.visits, 0),
                     last_seen: vs.map(v => v.last_seen).sort().pop() || null,
                     is_mobile: vs.some(v => v.is_mobile),
@@ -501,12 +549,22 @@ function memoryRepo() {
                 .map(({ type, plot_id, detail, created_at }) => ({ type, plot_id, detail: detail ?? null, created_at }));
         },
 
-        async updateLead(id, { status, notes, followUp }) {
+        async updateLead(id, { status, notes, followUp, lostReason, assignedTo, visitAt, visitOutcome }) {
             const lead = leads.find(l => l.id === id);
             if (!lead) return false;
-            if (status != null) lead.status = status;
+            if (status != null) {
+                if (status === 'lost' && lead.status !== 'lost') lead.lost_from = lead.status;
+                if (status === 'lost') lead.lost_reason = lostReason ?? lead.lost_reason ?? null; else lead.lost_reason = null;
+                if (status !== 'new' && !lead.first_contact_at) lead.first_contact_at = now();
+                if (status !== lead.status) lead.stage_changed_at = now();
+                lead.status = status;
+            }
+            lead.stage_changed_at ??= lead.created_at;
             if (notes != null) lead.notes = notes;
             if (followUp !== undefined) lead.follow_up = followUp;
+            if (assignedTo !== undefined) lead.assigned_to = assignedTo;
+            if (visitAt !== undefined) { lead.visit_at = visitAt; if (visitOutcome === undefined) lead.visit_outcome = visitAt ? 'scheduled' : null; }
+            if (visitOutcome !== undefined) lead.visit_outcome = visitOutcome;
             lead.updated_at = now();
             return true;
         },
@@ -593,11 +651,12 @@ function memoryRepo() {
 
         async insertDemo(data) {
             const phoneToId = new Map();
-            data.leads.forEach(l => {
+            data.leads.forEach(({ activities = [], ...l }) => {
                 if (leads.some(x => x.phone === l.phone)) return;
                 const lead = { ...l, id: nextLeadId++, is_demo: true };
                 leads.push(lead);
                 phoneToId.set(l.phone, lead.id);
+                activities.forEach(a => crm._activities.push({ id: crm._nextId(), lead_id: lead.id, type: a.type, outcome: a.outcome, note: null, actor: 'demo', created_at: a.created_at, is_demo: true }));
             });
             data.visitors.forEach(v => {
                 if (visitors.has(v.id)) return;
@@ -611,6 +670,7 @@ function memoryRepo() {
             events = events.filter(e => !e.is_demo);
             visitors = new Map([...visitors].filter(([, v]) => !v.is_demo));
             leads = leads.filter(l => !l.is_demo);
+            crm._activities.splice(0, crm._activities.length, ...crm._activities.filter(a => !a.is_demo));
         },
     };
 }

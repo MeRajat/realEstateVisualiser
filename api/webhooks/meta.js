@@ -5,6 +5,7 @@
 import { route, send, readRaw, normalisePhone, cleanText } from '../_lib/http.js';
 import { getRepo } from '../_lib/db.js';
 import { verifySignature } from './whatsapp.js';
+import { leadAlert } from '../_lib/push.js';
 
 const FIELD = {
     name: ['full_name', 'name', 'first_name'], phone: ['phone_number', 'phone', 'mobile', 'mobile_number'],
@@ -54,6 +55,7 @@ export default route(['GET', 'POST'], async (req, res) => {
             const campaign = cleanText(detail.campaign_name || detail.ad_name || v.ad_name || detail.form_name || v.form_name, 80);
             const r = await repo.upsertInboundLead({ ...lead, source, campaign, adId: v.ad_id ? String(v.ad_id) : null });
             created.push({ id: r.id, source, campaign });
+            if (r.created) leadAlert({ id: r.id, name: lead.name }, `From ${source === 'instagram' ? 'Instagram' : 'Facebook'} ad${campaign ? `: ${campaign}` : ''}`).catch(() => {});
         }
     }
     send(res, 200, { ok: true, created });

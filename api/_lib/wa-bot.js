@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import { aiEnabled, askJson } from './ai.js';
 import { getRepo } from './db.js';
 import { SERVER_TO_TOKEN } from './inventory-labels.js';
+import { leadAlert } from './push.js';
 
 const require = createRequire(import.meta.url);
 const PLAN = require('../../src/shared/plots_data.json');
@@ -140,7 +141,9 @@ export async function handleInbound({ phone, text, profileName = null, send = wa
         aiSummary: [out.summary, notes].filter(Boolean).join(' · ').slice(0, 300) || null,
         followUp: out.visitDay || null,
     });
-    if (out.interestedPlot) await repo.updateLead(lead.id, { status: null, notes: null, followUp: undefined }).catch(() => {});
+    if (lead.created) leadAlert({ id: lead.id, name: lead.name }, 'Messaged on WhatsApp').catch(() => {});
+    else if (out.handoff) leadAlert({ id: lead.id, name: lead.name }, 'Wants to talk to you on WhatsApp').catch(() => {});
+    else if (out.visitDay) leadAlert({ id: lead.id, name: lead.name }, `Site visit on ${out.visitDay}`).catch(() => {});
 
     let sent = false;
     if (send && reply) sent = await sendWhatsApp(phone, reply);
