@@ -24,7 +24,7 @@
     }
   ],
   "functions": {
-    "api/**/*.js": {
+    "api/[...path].js": {
       "includeFiles": "src/shared/plots_data.json"
     }
   }

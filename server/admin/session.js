@@ -1,6 +1,6 @@
 // GET → { authed }, POST { password } → sign in, DELETE → sign out.
-import { route, send, readJson } from '../_lib/http.js';
-import { checkPassword, startSession, endSession, isAuthed } from '../_lib/auth.js';
+import { route, send, readJson } from '../lib/http.js';
+import { checkPassword, startSession, endSession, isAuthed } from '../lib/auth.js';
 
 export default route(['GET', 'POST', 'DELETE'], async (req, res) => {
     if (req.method === 'GET') return send(res, 200, { authed: isAuthed(req) });

@@ -2,8 +2,8 @@
 // Env: WA_VERIFY_TOKEN (any secret you type into Meta's webhook form), WA_APP_SECRET (optional,
 // checks the X-Hub-Signature-256 header), WA_TOKEN + WA_PHONE_ID (to send replies).
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { route, send, readRaw } from '../_lib/http.js';
-import { handleInbound } from '../_lib/wa-bot.js';
+import { route, send, readRaw } from '../lib/http.js';
+import { handleInbound } from '../lib/wa-bot.js';
 
 export function verifySignature(raw, header, secret) {
     if (!secret) return true;

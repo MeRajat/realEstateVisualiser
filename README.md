@@ -80,7 +80,8 @@ admin/index.html         builder dashboard shell
 src/shared/              plot data (plots_data.json) + derived geometry, zones, facing, pricing
 src/customer/            customer app: plan.js (D3), view3d.js (three.js, lazy), mapview.js (Leaflet, lazy)
 src/admin/               dashboard UI
-api/                     Vercel serverless functions
+api/[...path].js         the one Vercel function; dispatches to server/router.js
+server/                  API handlers (one file per endpoint, same names as the URL)
   track.js               anonymous visits / plot views (+ broker tag ?cp=)
   lead.js                lead capture (name + mobile)
   inventory.js           public live stock (status + demand, no customer details)
@@ -96,7 +97,7 @@ api/                     Vercel serverless functions
   admin/session.js       sign in / out (signed HttpOnly cookie)
   admin/leads.js         list + update lead status / notes
   admin/stats.js         KPIs, daily series, most-viewed plots
-  _lib/                  db (Neon or in-memory), units + marketing repos, inventory rules, ai, wa-bot, auth, http helpers
+  lib/                   db (Neon or in-memory), units / marketing / crm repos, inventory rules, insights, ai, wa-bot, push, auth, http helpers
 ```
 
 ## Updating plots

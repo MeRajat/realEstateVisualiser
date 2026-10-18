@@ -1,8 +1,8 @@
 // GET → { configured, publicKey }; POST { subscription, label } ; DELETE { endpoint } ; POST { test: true }
-import { getRepo } from '../_lib/db.js';
-import { route, send, readJson, badRequest, cleanText } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/auth.js';
-import { pushConfigured, notifyAll } from '../_lib/push.js';
+import { getRepo } from '../lib/db.js';
+import { route, send, readJson, badRequest, cleanText } from '../lib/http.js';
+import { requireAdmin } from '../lib/auth.js';
+import { pushConfigured, notifyAll } from '../lib/push.js';
 
 export default route(['GET', 'POST', 'DELETE'], async (req, res) => {
     if (!requireAdmin(req, res)) return;

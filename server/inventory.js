@@ -1,8 +1,8 @@
 // GET /api/inventory — live stock for the customer site: which plots/flats are on hold, booked,
 // sold or not for sale, plus which ones are in demand. No customer details are ever returned.
-import { getRepo } from './_lib/db.js';
-import { route, send } from './_lib/http.js';
-import { demandTier } from './_lib/inventory.js';
+import { getRepo } from './lib/db.js';
+import { route, send } from './lib/http.js';
+import { demandTier } from './lib/inventory.js';
 
 export default route(['GET'], async (req, res) => {
     const repo = getRepo();

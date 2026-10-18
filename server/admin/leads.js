@@ -1,9 +1,9 @@
 // GET → all leads with engagement; GET ?id=N → that lead's activity timeline;
 // PATCH { id, status?, notes?, follow_up? ('YYYY-MM-DD' | null to clear) } → update the lead.
-import { getRepo } from '../_lib/db.js';
-import { route, send, readJson, badRequest, cleanText } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/auth.js';
-import { LOST_REASONS } from '../_lib/crm-repo.js';
+import { getRepo } from '../lib/db.js';
+import { route, send, readJson, badRequest, cleanText } from '../lib/http.js';
+import { requireAdmin } from '../lib/auth.js';
+import { LOST_REASONS } from '../lib/crm-repo.js';
 
 export const LEAD_STATUSES = ['new', 'contacted', 'site_visit', 'negotiation', 'booked', 'lost'];
 

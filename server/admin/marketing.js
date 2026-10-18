@@ -4,11 +4,11 @@
 // POST { action: 'spend', source, campaign, week, amount } | { action: 'spend-delete', id }
 //      { action: 'wa-test', phone, text }  → run the assistant without sending (sandbox)
 //      { action: 'wa-send', phone, text }  → builder replies (sent via Cloud API when configured)
-import { getRepo } from '../_lib/db.js';
-import { route, send, readJson, badRequest, cleanText, normalisePhone } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/auth.js';
-import { handleInbound, sendWhatsApp, waConfigured } from '../_lib/wa-bot.js';
-import { aiEnabled } from '../_lib/ai.js';
+import { getRepo } from '../lib/db.js';
+import { route, send, readJson, badRequest, cleanText, normalisePhone } from '../lib/http.js';
+import { requireAdmin } from '../lib/auth.js';
+import { handleInbound, sendWhatsApp, waConfigured } from '../lib/wa-bot.js';
+import { aiEnabled } from '../lib/ai.js';
 
 const SOURCES = ['facebook', 'instagram', 'google', 'whatsapp', 'youtube', '99acres', 'magicbricks', 'other'];
 

@@ -1,7 +1,7 @@
 // GET ?days=30 → totals, daily visitors/leads series, most viewed plots.
-import { getRepo } from '../_lib/db.js';
-import { route, send } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/auth.js';
+import { getRepo } from '../lib/db.js';
+import { route, send } from '../lib/http.js';
+import { requireAdmin } from '../lib/auth.js';
 
 export default route(['GET'], async (req, res) => {
     if (!requireAdmin(req, res)) return;

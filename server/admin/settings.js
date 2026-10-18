@@ -1,8 +1,8 @@
 // Dashboard settings: message templates, sales team names, the builder's own name.
-import { getRepo } from '../_lib/db.js';
-import { route, send, readJson, badRequest, cleanText } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/auth.js';
-import { DEFAULT_SETTINGS } from '../_lib/crm-repo.js';
+import { getRepo } from '../lib/db.js';
+import { route, send, readJson, badRequest, cleanText } from '../lib/http.js';
+import { requireAdmin } from '../lib/auth.js';
+import { DEFAULT_SETTINGS } from '../lib/crm-repo.js';
 
 export default route(['GET', 'PUT'], async (req, res) => {
     if (!requireAdmin(req, res)) return;

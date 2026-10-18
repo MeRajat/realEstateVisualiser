@@ -4,13 +4,13 @@ import { call, adminCookie } from './helpers.mjs';
 
 delete process.env.DATABASE_URL;
 delete process.env.ANTHROPIC_API_KEY;
-const { default: publicInventory } = await import('../api/inventory.js');
-const { default: adminInventory } = await import('../api/admin/inventory.js');
-const { default: track } = await import('../api/track.js');
-const { default: lead } = await import('../api/lead.js');
-const { default: leads } = await import('../api/admin/leads.js');
-const { default: ai } = await import('../api/admin/ai.js');
-const { getRepo } = await import('../api/_lib/db.js');
+const { default: publicInventory } = await import('../server/inventory.js');
+const { default: adminInventory } = await import('../server/admin/inventory.js');
+const { default: track } = await import('../server/track.js');
+const { default: lead } = await import('../server/lead.js');
+const { default: leads } = await import('../server/admin/leads.js');
+const { default: ai } = await import('../server/admin/ai.js');
+const { getRepo } = await import('../server/lib/db.js');
 const headers = await adminCookie();
 
 test('admin endpoints need a session', async () => {

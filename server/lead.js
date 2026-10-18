@@ -1,7 +1,7 @@
 // POST /api/lead — customer submits name + mobile number.
-import { getRepo } from './_lib/db.js';
-import { route, send, readJson, badRequest, VISITOR_ID, PLOT_ID, cleanText, normalisePhone } from './_lib/http.js';
-import { leadAlert } from './_lib/push.js';
+import { getRepo } from './lib/db.js';
+import { route, send, readJson, badRequest, VISITOR_ID, PLOT_ID, cleanText, normalisePhone } from './lib/http.js';
+import { leadAlert } from './lib/push.js';
 
 export default route(['POST'], async (req, res) => {
     const body = await readJson(req);

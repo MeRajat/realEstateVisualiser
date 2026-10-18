@@ -1,11 +1,11 @@
 // Lead activity log. POST { leadId, type, outcome?, note?, at? } ; GET ?leadId=N
 // Side effects keep the pipeline honest: an answered call moves a new lead to "contacted",
 // a scheduled visit sets the visit date, a completed visit moves the lead to "site visit".
-import { getRepo } from '../_lib/db.js';
-import { route, send, readJson, badRequest, cleanText } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/auth.js';
-import { ACTIVITY_TYPES, CALL_OUTCOMES, VISIT_OUTCOMES } from '../_lib/crm-repo.js';
-import { STAGES } from '../_lib/insights.js';
+import { getRepo } from '../lib/db.js';
+import { route, send, readJson, badRequest, cleanText } from '../lib/http.js';
+import { requireAdmin } from '../lib/auth.js';
+import { ACTIVITY_TYPES, CALL_OUTCOMES, VISIT_OUTCOMES } from '../lib/crm-repo.js';
+import { STAGES } from '../lib/insights.js';
 
 export default route(['GET', 'POST'], async (req, res) => {
     if (!requireAdmin(req, res)) return;

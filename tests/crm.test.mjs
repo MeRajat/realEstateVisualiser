@@ -1,18 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { call, adminCookie } from './helpers.mjs';
-import { computeInsights } from '../api/_lib/insights.js';
+import { computeInsights } from '../server/lib/insights.js';
 
 delete process.env.DATABASE_URL;
 delete process.env.ANTHROPIC_API_KEY;
 delete process.env.AI_DEV_CLI;
 delete process.env.VAPID_PUBLIC_KEY;
-const { default: lead } = await import('../api/lead.js');
-const { default: leads } = await import('../api/admin/leads.js');
-const { default: activity } = await import('../api/admin/activity.js');
-const { default: insights } = await import('../api/admin/insights.js');
-const { default: settings } = await import('../api/admin/settings.js');
-const { default: push } = await import('../api/admin/push.js');
+const { default: lead } = await import('../server/lead.js');
+const { default: leads } = await import('../server/admin/leads.js');
+const { default: activity } = await import('../server/admin/activity.js');
+const { default: insights } = await import('../server/admin/insights.js');
+const { default: settings } = await import('../server/admin/settings.js');
+const { default: push } = await import('../server/admin/push.js');
 const headers = await adminCookie();
 const D = 86400000, H = 3600000;
 const now = Date.parse('2026-10-18T06:00:00Z');

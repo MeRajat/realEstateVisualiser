@@ -2,18 +2,16 @@ import { defineConfig, loadEnv } from 'vite';
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 
-// Serves /api/* from the ./api folder during `npm run dev`, mirroring Vercel functions.
+// Serves /api/* during `npm run dev` through the same router Vercel's single function uses.
 function vercelApiDev() {
     return {
         name: 'vercel-api-dev',
         configureServer(server) {
-            server.middlewares.use('/api', async (req, res, next) => {
-                const path = new URL(req.url, 'http://x').pathname.replace(/\/$/, '');
-                const file = resolve(__dirname, 'api', `.${path}.js`);
-                if (path.includes('_lib') || !existsSync(file)) return next();
+            server.middlewares.use('/api', async (req, res) => {
                 try {
-                    const mod = await server.ssrLoadModule(file);
-                    await mod.default(req, res);
+                    const mod = await server.ssrLoadModule(resolve(__dirname, 'server/router.js'));
+                    req.url = '/api' + req.url; // the middleware strips the mount path
+                    await mod.route(req, res);
                 } catch (err) {
                     console.error(err);
                     res.statusCode = 500;

@@ -1,9 +1,9 @@
 // POST { plots: [[id, weight], …] } → replace demo data (fake leads, visitors, events for the last
 // 60 days); DELETE → remove all demo rows. Real leads and visits are never touched.
 // The dashboard sends plot ids + desirability weights (it already has the plan data).
-import { getRepo, todayIST } from '../_lib/db.js';
-import { route, send, readJson, badRequest, PLOT_ID } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/auth.js';
+import { getRepo, todayIST } from '../lib/db.js';
+import { route, send, readJson, badRequest, PLOT_ID } from '../lib/http.js';
+import { requireAdmin } from '../lib/auth.js';
 
 const DAY_MS = 86400000;
 const IST_OFFSET_MS = 5.5 * 3600000;

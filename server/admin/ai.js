@@ -3,10 +3,10 @@
 //   { task: 'brief', facts, lang }                    → { text, ai }
 // `units` is the compact stock table the dashboard already has (id, status, facing, zone, corner,
 // priceLakh, areaSqFt, demand). With no API key, 'ask' uses keyword rules and 'brief' a template.
-import { route, send, readJson, badRequest, cleanText } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/auth.js';
-import { aiEnabled, askJson, askText } from '../_lib/ai.js';
-import { parseAsk, filterUnits, describeAsk } from '../_lib/inventory.js';
+import { route, send, readJson, badRequest, cleanText } from '../lib/http.js';
+import { requireAdmin } from '../lib/auth.js';
+import { aiEnabled, askJson, askText } from '../lib/ai.js';
+import { parseAsk, filterUnits, describeAsk } from '../lib/inventory.js';
 
 const ASK_SYSTEM = `You help a small Indian real-estate builder find plots in their own stock. The user is busy, not technical,
 and may write in Hindi, English or Hinglish. You get the stock as a JSON array of units with: id, status

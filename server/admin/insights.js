@@ -1,10 +1,10 @@
 // GET /api/admin/insights?days=30[&coach=1] → drop-off funnel, speed to contact, lost reasons,
 // site-visit no-shows, sources, team, and action items. coach=1 adds a short AI note.
-import { getRepo } from '../_lib/db.js';
-import { route, send } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/auth.js';
-import { computeInsights } from '../_lib/insights.js';
-import { aiEnabled, askText } from '../_lib/ai.js';
+import { getRepo } from '../lib/db.js';
+import { route, send } from '../lib/http.js';
+import { requireAdmin } from '../lib/auth.js';
+import { computeInsights } from '../lib/insights.js';
+import { aiEnabled, askText } from '../lib/ai.js';
 
 const COACH = `You are a sales coach for a small Indian real-estate builder. You get the builder's funnel numbers as JSON (leads over the last N
 days, conversion at each step, speed to first call, lost reasons, site-visit no-shows, sources, team). Write 3-4 short lines, each starting

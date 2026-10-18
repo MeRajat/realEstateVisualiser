@@ -16,7 +16,7 @@ export function call(handler, { method = 'GET', url = '/', body, headers = {} } 
 }
 
 export async function adminCookie() {
-    const { default: session } = await import('../api/admin/session.js');
+    const { default: session } = await import('../server/admin/session.js');
     const r = await call(session, { method: 'POST', body: { password: 'admin' } });
     const cookie = r.headers['set-cookie'].split(';')[0];
     return { cookie };

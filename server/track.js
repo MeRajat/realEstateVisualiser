@@ -1,6 +1,6 @@
 // POST /api/track — anonymous visitor analytics (visits, plot views, enquire taps).
-import { getRepo } from './_lib/db.js';
-import { route, send, readJson, badRequest, VISITOR_ID, PLOT_ID, cleanText } from './_lib/http.js';
+import { getRepo } from './lib/db.js';
+import { route, send, readJson, badRequest, VISITOR_ID, PLOT_ID, cleanText } from './lib/http.js';
 
 const TYPES = new Set(['visit', 'plot_view', 'enquire', 'view_mode']);
 

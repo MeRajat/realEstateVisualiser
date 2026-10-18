@@ -2,10 +2,10 @@
 // seconds, tagged with the ad and form it came from. GET = verification; POST = leadgen events.
 // Env: META_VERIFY_TOKEN, META_APP_SECRET (optional signature check), META_PAGE_TOKEN (to fetch
 // the lead's answers from the Graph API; if absent, inline field_data in the payload is used).
-import { route, send, readRaw, normalisePhone, cleanText } from '../_lib/http.js';
-import { getRepo } from '../_lib/db.js';
+import { route, send, readRaw, normalisePhone, cleanText } from '../lib/http.js';
+import { getRepo } from '../lib/db.js';
 import { verifySignature } from './whatsapp.js';
-import { leadAlert } from '../_lib/push.js';
+import { leadAlert } from '../lib/push.js';
 
 const FIELD = {
     name: ['full_name', 'name', 'first_name'], phone: ['phone_number', 'phone', 'mobile', 'mobile_number'],
