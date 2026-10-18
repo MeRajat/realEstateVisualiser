@@ -17,6 +17,10 @@ export default route(['POST'], async (req, res) => {
             userAgent: ua,
             referrer: cleanText(body.referrer, 300),
             cp: cleanText(body.cp, 40),
+            utmSource: cleanText(body.utmSource, 40),
+            utmCampaign: cleanText(body.utmCampaign, 80),
+            utmContent: cleanText(body.utmContent, 80),
+            fbclid: !!body.fbclid,
             isMobile: /Mobi|Android|iPhone/i.test(ua || ''),
         });
     } else {

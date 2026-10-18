@@ -23,9 +23,22 @@ The dashboard has three tabs: **Today**, **Stock** and **Customers**.
 - **Excel**: download the stock list, or upload a CSV with columns `Plot, Status, Price (lakh), Note` to update many plots at once.
 - Booking a customer by mobile number also creates / updates their card in Customers (source "Walk-in / phone").
 
+## Ads & WhatsApp — Stage 2
+
+The **Ads** tab connects marketing to the CRM:
+
+- **Campaign links**: pick Facebook / Instagram / WhatsApp / YouTube / Google, name the campaign, copy the link into the ad. Visitors and leads from it are counted under that campaign (UTM tags; `fbclid` is treated as Facebook).
+- **What your ads brought**: per source / campaign — visitors, leads, site visits, bookings; type in what you spent per week and the table shows cost per lead and **cost per site visit**.
+- **Facebook / Instagram lead ads** (`/api/webhooks/meta`): every form submission becomes a lead card within seconds, tagged with the campaign / ad name. Needs `META_VERIFY_TOKEN`, `META_PAGE_TOKEN` (and optionally `META_APP_SECRET` for signature checks).
+- **WhatsApp assistant** (`/api/webhooks/whatsapp`): customers who message the business number (including from Click-to-WhatsApp ads) get an instant reply in their language. The assistant quotes live stock, learns budget / size / facing, books a site-visit day (saved as the follow-up date) and hands over to the team when asked. Every chat shows on the customer's card with a reply box. Needs `WA_VERIFY_TOKEN`, `WA_TOKEN`, `WA_PHONE_ID` (optional `WA_APP_SECRET`). Without an AI key a scripted 4-step flow runs; without WhatsApp credentials replies are stored but not sent (sandbox).
+- **Write my Facebook ad**: three ad texts (English, Hindi, Hinglish) from today's stock with audience and daily-budget suggestions; the RERA number is appended when `VITE_RERA_ID` is set.
+- **Try the assistant**: a sandbox chat on the Ads tab (nothing is sent).
+
 ```bash
 npm test             # API tests (in-memory store, no network)
 ```
+
+> Local AI without a key (disposable): set `AI_DEV_CLI=1` in `.env` and the API routes AI calls through the installed `claude` CLI. Never active on Vercel.
 
 ## Run locally
 
@@ -61,11 +74,14 @@ api/                     Vercel serverless functions
   lead.js                lead capture (name + mobile)
   inventory.js           public live stock (status + demand, no customer details)
   admin/inventory.js     stock: list, change status / price / hold, history, Excel upload
-  admin/ai.js            assistant: ask about stock, morning note (Claude, with plain fallbacks)
+  admin/ai.js            assistant: ask about stock, morning note, ad copy (Claude, with plain fallbacks)
+  admin/marketing.js     campaigns, ad spend, WhatsApp threads, sandbox chat, setup status
+  webhooks/meta.js       Facebook / Instagram lead ads → lead cards
+  webhooks/whatsapp.js   WhatsApp Cloud API → AI assistant → lead cards
   admin/session.js       sign in / out (signed HttpOnly cookie)
   admin/leads.js         list + update lead status / notes
   admin/stats.js         KPIs, daily series, most-viewed plots
-  _lib/                  db (Neon or in-memory), units repo, inventory rules, ai, auth, http helpers
+  _lib/                  db (Neon or in-memory), units + marketing repos, inventory rules, ai, wa-bot, auth, http helpers
 ```
 
 ## Updating plots

@@ -21,6 +21,46 @@ bold. Lead with what needs action today (calls due, holds ending, new customers)
 then one concrete suggestion (e.g. a plot with many looks but no price, or a popular plot worth a WhatsApp push).
 Write in Hindi (Devanagari) if lang is "hi", otherwise simple Indian English. Numbers as digits. Never invent facts.`;
 
+const AD_SYSTEM = `You write Facebook / Instagram ad copy for a small Indian real-estate project. Input: project facts and live stock as JSON.
+Write for Tier-2 Indian home buyers on a phone: short, concrete, one clear benefit per variant, no hype words like "luxury",
+no promises of returns, no fake urgency — only scarcity that is in the facts (e.g. actual available count). Each variant has
+primaryText (max 125 chars, may use 1 emoji), headline (max 40 chars), description (max 30 chars), cta (one of: WhatsApp Now, Book Site Visit, Get Price List, Learn More).
+Give 3 variants: one in simple English, one in Hindi (Devanagari), one Hinglish (Latin script), each with a different angle (location/price/size, site visit, limited availability).
+audience: suggested Meta targeting for this project (locations around the site city, age range, interests as plain words).
+dailyBudgetInr: a sensible daily budget to get ~10 leads/day at ₹150-500 per lead. Also one line 'tip' for the builder.
+Every variant's primaryText must end with "RERA: <id>" if a reraId is given.`;
+
+const AD_SCHEMA = {
+    type: 'object',
+    properties: {
+        variants: { type: 'array', minItems: 3, maxItems: 3, items: { type: 'object', properties: {
+            lang: { type: 'string' }, angle: { type: 'string' }, primaryText: { type: 'string' }, headline: { type: 'string' }, description: { type: 'string' }, cta: { type: 'string' },
+        }, required: ['lang', 'angle', 'primaryText', 'headline', 'description', 'cta'], additionalProperties: false } },
+        audience: { type: 'object', properties: { locations: { type: 'array', items: { type: 'string' } }, ageMin: { type: 'number' }, ageMax: { type: 'number' }, interests: { type: 'array', items: { type: 'string' } } },
+            required: ['locations', 'ageMin', 'ageMax', 'interests'], additionalProperties: false },
+        dailyBudgetInr: { type: 'number' },
+        tip: { type: 'string' },
+    },
+    required: ['variants', 'audience', 'dailyBudgetInr', 'tip'],
+    additionalProperties: false,
+};
+
+function adFallback(f) {
+    const rera = f.reraId ? ` RERA: ${f.reraId}` : '';
+    const price = f.minPriceLakh ? `₹${f.minPriceLakh} लाख से` : '';
+    const priceEn = f.minPriceLakh ? `from ₹${f.minPriceLakh} lakh` : '';
+    return {
+        variants: [
+            { lang: 'en', angle: 'price & location', primaryText: `${f.available} residential plots ${priceEn} at ${f.siteName}, ${f.city}. JDA-area plots, clear papers, easy loan help. Message us on WhatsApp for today's price list.${rera}`, headline: `Plots ${priceEn} in ${f.city}`, description: `${f.available} plots left`, cta: 'WhatsApp Now' },
+            { lang: 'hi', angle: 'site visit', primaryText: `${f.siteName}, ${f.city} में ${f.available} प्लॉट उपलब्ध ${price}। इस रविवार फ्री साइट विज़िट बुक करें — हमारी टीम आपको पूरा प्रोजेक्ट दिखाएगी।${rera}`, headline: `${f.city} में अपना प्लॉट`, description: 'फ्री साइट विज़िट', cta: 'Book Site Visit' },
+            { lang: 'hinglish', angle: 'limited availability', primaryText: `Sirf ${f.available} plots bache hain ${f.siteName}, ${f.city} mein${f.minPriceLakh ? ` — ₹${f.minPriceLakh} lakh se shuru` : ''}. Corner aur east-facing plots pehle jaate hain. WhatsApp par abhi price list lein.${rera}`, headline: `Sirf ${f.available} plots bache`, description: 'Price list WhatsApp par', cta: 'Get Price List' },
+        ],
+        audience: { locations: [f.city, `${f.city} +25 km`], ageMin: 28, ageMax: 55, interests: ['Real estate', 'Property investment', 'Home loans', 'Plot for sale'] },
+        dailyBudgetInr: 2500,
+        tip: 'Use the Hindi variant for the site-visit objective and the Hinglish one for Click-to-WhatsApp; compare cost per site visit after one week.',
+    };
+}
+
 const ASK_SCHEMA = {
     type: 'object',
     properties: { answer: { type: 'string' }, unitIds: { type: 'array', items: { type: 'string' }, maxItems: 40 } },
@@ -80,6 +120,17 @@ export default route(['POST'], async (req, res) => {
             } catch (e) { console.error('[ai] brief failed, using template', e.message); }
         }
         return send(res, 200, { text: briefFallback(facts, lang), ai: false });
+    }
+
+    if (body.task === 'adcopy') {
+        const facts = body.facts && typeof body.facts === 'object' ? body.facts : {};
+        if (aiEnabled()) {
+            try {
+                const out = await askJson({ system: AD_SYSTEM, schema: AD_SCHEMA, maxTokens: 2500, effort: 'medium', user: JSON.stringify({ lang, ...facts }) });
+                return send(res, 200, { ...out, ai: true });
+            } catch (e) { console.error('[ai] adcopy failed, using template', e.message); }
+        }
+        return send(res, 200, { ...adFallback(facts), ai: false });
     }
 
     throw badRequest('Unknown task');

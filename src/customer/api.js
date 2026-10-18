@@ -34,6 +34,16 @@ export const channelPartner = (() => {
     } catch { return null; }
 })();
 
+// Campaign tags from ad links (utm_* / fbclid) stick for the visit so leads are credited to the campaign
+export const campaign = (() => {
+    try {
+        const q = new URLSearchParams(location.search);
+        const fresh = { utmSource: q.get('utm_source'), utmCampaign: q.get('utm_campaign'), utmContent: q.get('utm_content') || q.get('utm_medium'), fbclid: q.get('fbclid') ? 1 : null };
+        if (Object.values(fresh).some(Boolean)) { sessionStorage.setItem('gm_utm', JSON.stringify(fresh)); return fresh; }
+        return JSON.parse(sessionStorage.getItem('gm_utm')) || {};
+    } catch { return {}; }
+})();
+
 export function track(type, extra = {}) {
     post('/api/track', { visitorId, type, ...extra }).catch(() => {});
 }
@@ -44,7 +54,7 @@ export function trackVisit() {
         if (sessionStorage.getItem('gm_visit')) return;
         sessionStorage.setItem('gm_visit', '1');
     } catch { /* ignore */ }
-    track('visit', { referrer: document.referrer || null, cp: channelPartner });
+    track('visit', { referrer: document.referrer || null, cp: channelPartner, ...campaign });
 }
 
 let lastViewed = null;

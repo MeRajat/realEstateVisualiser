@@ -9,7 +9,7 @@ Who pays: the builder. What they pay for (from `MarketResearch.md`): never selli
 - Broker credit on leads (first touch wins) shown in Customers + export; walk-in bookings create lead cards; DPDP-style consent line on the lead form.
 - Tests: `npm test` (13 API tests on the in-memory store).
 
-## Stage 2 — Facebook / Instagram ads + WhatsApp leads (branch `stage-2-ads-whatsapp`)
+## Stage 2 — Facebook / Instagram ads + WhatsApp leads (branch `stage-2-ads-whatsapp`) ✅ built (items 1–5)
 1. **UTM / campaign attribution**: capture `utm_source/medium/campaign/content` + `fbclid` on visits; leads inherit them; Sources card shows campaign-level visitors → leads → site visits → bookings.
 2. **Meta Lead Ads webhook** (`/api/webhooks/meta`): verify token, receive `leadgen` events, pull the lead via Graph API with `META_PAGE_TOKEN`, create the lead with source `facebook`/`instagram` + ad name. Instant WhatsApp "thank you + brochure link" via Cloud API when configured.
 3. **WhatsApp Cloud API webhook** (`/api/webhooks/whatsapp`): inbound messages → AI qualifier (budget, size, facing, when to visit) in Hindi/English → lead card with stage + summary; builder sees the conversation and can take over; "Test the bot" panel in the dashboard works without Meta credentials.
@@ -21,6 +21,8 @@ Who pays: the builder. What they pay for (from `MarketResearch.md`): never selli
 2. **Reel / Short scripts**: 30-second scripts + shot lists for the builder's phone; YouTube title/description/tags.
 3. **Story cards**: auto-generated PNG cards (availability snapshot, "only N east-facing left", plot highlight) rendered in the browser with RERA number.
 4. **Posting calendar** stored in the dashboard with "mark posted"; auto-publish via Instagram Graph API later (needs business account + app review).
+
+Stage 2 notes: WhatsApp replies are plain text inside the 24-hour customer window (no template approval needed). Instant replies to *website* leads need an approved template — later. Meta Marketing API campaign creation needs app review, so the ad maker gives copy + audience + budget to paste into Ads Manager.
 
 ## Later
 - Multi-project / multi-builder accounts (schema already keys stock by unit id; add `project` column + builder login).

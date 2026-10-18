@@ -4,6 +4,7 @@ import './admin.css';
 import { SITE, plots, features, boundary } from '../shared/site.js';
 import { t, getLang, setLang, sourceName, locale } from './i18n.js';
 import { createStock } from './stock.js';
+import { createMarketing } from './marketing.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
@@ -99,6 +100,9 @@ stock.onChange = async (why) => {
     if (why === 'saved') { brief.key = ''; await load({ quiet: true }); } else render();
 };
 stock.bind($('content'));
+const marketing = createMarketing({ api, toast, stockFacts: () => stock.facts(), openCustomer: (id) => openCustomer(id) });
+marketing.onChange = () => render();
+marketing.bind($('content'));
 
 // ─── Language ────────────────────────────────────────
 function applyStaticText() {
@@ -193,6 +197,12 @@ function render() {
     if (ui.tab === 'stock') {
         $('content').innerHTML = demoBanner + '<div id="stock-root"></div>';
         stock.render($('stock-root'));
+        return;
+    }
+
+    if (ui.tab === 'marketing') {
+        $('content').innerHTML = demoBanner + '<div id="marketing-root"></div>';
+        marketing.render($('marketing-root'));
         return;
     }
 
@@ -568,7 +578,7 @@ function renderCustomerList() {
             <span class="avatar" aria-hidden="true">${initial(l.name)}</span>
             <span class="who-text">
                 <b>${esc(l.name)}${isHot(l) ? ' 🔥' : ''}</b>
-                <span>${prettyPhone(l.phone)}${l.interested_plot ? ` · ${what(l.interested_plot)}` : ''}${l.cp ? ` · ${t('viaBroker', { name: esc(l.cp) })}` : ''}</span>
+                <span>${prettyPhone(l.phone)}${l.interested_plot ? ` · ${what(l.interested_plot)}` : ''}${l.cp ? ` · ${t('viaBroker', { name: esc(l.cp) })}` : ''}${['facebook', 'instagram', 'whatsapp'].includes(l.source) ? ` · ${esc(sourceName(l.source))}${l.campaign ? ` (${esc(l.campaign)})` : ''}` : ''}</span>
                 <span class="small">${l.follow_up && ACTIVE.includes(l.status)
                     ? `<span class="${l.follow_up < today ? 'late' : ''}">${ICON.clock} ${t('callOn', { date: prettyDate(l.follow_up) })}</span>`
                     : t('lastSeen', { time: ago(l.last_seen || l.updated_at) })}</span>
@@ -595,7 +605,8 @@ async function openCustomer(id) {
         <header class="sheet-head">
             <span class="avatar lg" aria-hidden="true">${initial(l.name)}</span>
             <div class="who-text"><h2>${esc(l.name)}${isHot(l) ? ' 🔥' : ''}</h2>
-                <span>${prettyPhone(l.phone)} · ${t('fromSource', { source: esc(sourceName(l.source)) })}${l.cp ? ` · ${t('viaBroker', { name: esc(l.cp) })}` : ''}</span></div>
+                <span>${prettyPhone(l.phone)} · ${t('fromSource', { source: esc(sourceName(l.source)) })}${l.campaign ? ` · ${esc(l.campaign)}` : ''}${l.cp ? ` · ${t('viaBroker', { name: esc(l.cp) })}` : ''}</span>
+                ${l.ai_summary ? `<span class="ai-summary">✨ ${esc(l.ai_summary)}</span>` : ''}</div>
             <button type="button" class="btn btn-ghost icon-only" data-act="close" aria-label="${esc(t('close'))}">${ICON.close}</button>
         </header>
         <div class="contact">
@@ -612,6 +623,10 @@ async function openCustomer(id) {
         <section><h3>${t('notes')}</h3>
             <textarea id="notes" rows="3" maxlength="2000" placeholder="${esc(t('notesHint'))}">${esc(l.notes || '')}</textarea>
         </section>
+        <section id="wa-section" hidden><h3>${t('waThread')}</h3>
+            <div class="chat" id="wa-thread"></div>
+            <form class="ask" id="wa-reply-form"><input type="text" id="wa-reply" maxlength="1500" placeholder="${esc(t('waReplyHint'))}" autocomplete="off"><button class="btn btn-primary" type="submit">${t('send')}</button></form>
+        </section>
         <section><h3>${t('lookedAt')}</h3>
             <div class="chips">${viewed.length ? viewed.map(p => `<a class="chip" href="/${isApartment(p.plot) ? `buildings/?unit=${encodeURIComponent(p.plot)}` : `#plot-${encodeURIComponent(p.plot)}`}" target="_blank" rel="noopener">${what(p.plot)}<small>×${p.views}</small></a>`).join('')
                 : `<span class="help">${l.interested_plot ? what(l.interested_plot) : t('general')}</span>`}</div>
@@ -622,6 +637,12 @@ async function openCustomer(id) {
         <footer class="sheet-foot"><button type="button" class="btn btn-primary btn-lg" data-act="save">${t('save')}</button></footer>`;
     renderFollowChips();
     dialog.showModal();
+    api(`/api/admin/marketing?thread=${l.phone}`).then(({ messages }) => {
+        if (!messages.length) return;
+        $('wa-section').hidden = false;
+        $('wa-thread').innerHTML = messages.map(m => `<div class="msg ${m.direction}${m.kind === 'builder' ? ' builder' : ''}">${esc(m.text).replace(/\n/g, '<br>')}<small>${ago(m.created_at)}</small></div>`).join('');
+        $('wa-thread').scrollTop = 1e6;
+    }).catch(() => {});
     try {
         const { timeline } = await api(`/api/admin/leads?id=${id}`);
         const MODE = { '3d': '3D', map: 'Map', nearby: 'Nearby', plan: 'Plan' };
@@ -666,6 +687,21 @@ dialog.addEventListener('click', async (e) => {
 });
 dialog.addEventListener('change', (e) => {
     if (e.target.id === 'follow-date') { current.follow_up = e.target.value; renderFollowChips(); }
+});
+// Reply on WhatsApp from the customer card: through the Cloud API when connected, else via the WhatsApp app
+dialog.addEventListener('submit', async (e) => {
+    if (e.target.id !== 'wa-reply-form') return;
+    e.preventDefault();
+    const text = $('wa-reply').value.trim();
+    const l = leads.find(x => x.id === current.id);
+    if (!text || !l) return;
+    try {
+        const r = await api('/api/admin/marketing', { method: 'POST', body: JSON.stringify({ action: 'wa-send', phone: l.phone, text }) });
+        $('wa-thread').insertAdjacentHTML('beforeend', `<div class="msg out builder">${esc(text)}<small>${t('justNow')}</small></div>`);
+        $('wa-reply').value = '';
+        if (!r.sent) { toast(t('waNotConnected')); window.open(`https://wa.me/91${l.phone}?text=${encodeURIComponent(text)}`, '_blank', 'noopener'); }
+        else toast(t('sent'));
+    } catch (err) { toast(err.message); }
 });
 
 async function updateLead(id, patch) {
@@ -728,7 +764,8 @@ $('tabs-nav').addEventListener('click', (e) => {
     const b = e.target.closest('[data-tab]');
     if (!b || b.dataset.tab === ui.tab) return;
     ui.tab = b.dataset.tab;
-    render();
+    if (ui.tab === 'marketing') marketing.load().catch(err => toast(err.message)).finally(render);
+    else render();
     window.scrollTo({ top: 0 });
 });
 
@@ -777,11 +814,11 @@ function csvCell(v) {
 }
 function exportCsv() {
     const list = filteredLeads();
-    const head = ['Name', 'Mobile', 'Stage', 'Interested in', 'Looked at', 'Call again on', 'Came from', 'Broker', 'Visits', 'First enquiry', 'Last seen', 'Notes'];
+    const head = ['Name', 'Mobile', 'Stage', 'Interested in', 'Looked at', 'Call again on', 'Came from', 'Campaign', 'Broker', 'AI summary', 'Visits', 'First enquiry', 'Last seen', 'Notes'];
     const rows = list.map(l => [
         l.name, `+91${l.phone}`, t(`stage_${l.status}`), l.interested_plot || '',
         (l.plots_viewed || []).map(p => `${p.plot} (${p.views})`).join('; '),
-        l.follow_up || '', sourceName(l.source), l.cp || '', l.visits,
+        l.follow_up || '', sourceName(l.source), l.campaign || '', l.cp || '', l.ai_summary || '', l.visits,
         new Date(l.created_at).toLocaleString('en-IN'), l.last_seen ? new Date(l.last_seen).toLocaleString('en-IN') : '', l.notes || '',
     ]);
     const csv = '﻿' + [head, ...rows].map(r => r.map(csvCell).join(',')).join('\r\n');

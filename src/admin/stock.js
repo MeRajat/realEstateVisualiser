@@ -61,7 +61,11 @@ export function createStock({ api, toast }) {
         const holdsEnding = list.filter(r => r.status === 'hold' && r.holdUntil && hoursLeft(r.holdUntil) <= 24).map(r => r.id);
         const hot = list.filter(r => r.hot && r.status === 'available').sort((a, b) => b.demand.enquiries - a.demand.enquiries || b.demand.views - a.demand.views).map(r => r.id);
         const noPrice = list.filter(r => r.status === 'available' && !r.priceLakh).map(r => r.id);
+        const avail = list.filter(r => r.status === 'available');
+        const priced = avail.filter(r => r.priceLakh).map(r => r.priceLakh);
         return { available: c.available, hold: c.hold, booked: c.booked, sold: c.sold, blocked: c.blocked, holdsEnding, hot, noPrice,
+            minPriceLakh: priced.length ? Math.min(...priced) : null, cornerAvailable: avail.filter(r => r.corner).length,
+            sizesGaj: [...new Set(avail.map(r => Math.round(r.gaj)))].sort((a, b) => a - b).slice(0, 5),
             soldThisWeek: data.changes.filter(ch => ['booked', 'sold'].includes(ch.to_status) && Date.now() - Date.parse(ch.created_at) < 7 * 864e5).length };
     }
 

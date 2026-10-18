@@ -3,6 +3,7 @@
 // Both implementations expose the same repository API.
 import { neon } from '@neondatabase/serverless';
 import { unitsPg, unitsMemory } from './units-repo.js';
+import { marketingPg, marketingMemory } from './marketing-repo.js';
 
 const DB_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 const TZ = 'Asia/Kolkata';
@@ -21,6 +22,23 @@ export function sourceFromReferrer(ref) {
     if (/99acres/.test(r)) return '99acres';
     if (/magicbricks/.test(r)) return 'magicbricks';
     return 'other';
+}
+
+// Where a visit came from, preferring the campaign tag over the referrer
+export function sourceOf({ referrer, utmSource, fbclid } = {}) {
+    const u = String(utmSource || '').toLowerCase();
+    if (u) {
+        if (/^(fb|facebook|meta)/.test(u)) return 'facebook';
+        if (/^(ig|insta)/.test(u)) return 'instagram';
+        if (/google/.test(u)) return 'google';
+        if (/whatsapp|wa$/.test(u)) return 'whatsapp';
+        if (/youtube|yt/.test(u)) return 'youtube';
+        if (/99acres/.test(u)) return '99acres';
+        if (/magicbricks/.test(u)) return 'magicbricks';
+        return u.replace(/[^a-z0-9_]/g, '').slice(0, 20) || 'other';
+    }
+    if (fbclid) return 'facebook';
+    return sourceFromReferrer(referrer);
 }
 
 // "Today" in IST as YYYY-MM-DD
@@ -90,6 +108,31 @@ export function pgRepo(sql) {
         await sql`alter table visitors add column if not exists is_demo boolean not null default false`;
         await sql`alter table visitors add column if not exists cp text`;
         await sql`alter table leads add column if not exists cp text`;
+        // Marketing (Stage 2): campaign attribution, ad spend, WhatsApp threads
+        await sql`alter table visitors add column if not exists utm_source text`;
+        await sql`alter table visitors add column if not exists utm_campaign text`;
+        await sql`alter table visitors add column if not exists utm_content text`;
+        await sql`alter table leads add column if not exists campaign text`;
+        await sql`alter table leads add column if not exists ad_id text`;
+        await sql`alter table leads add column if not exists email text`;
+        await sql`alter table leads add column if not exists ai_summary text`;
+        await sql`create table if not exists ad_spend (
+            id bigserial primary key,
+            source text not null,
+            campaign text,
+            week date not null,
+            amount numeric not null,
+            created_at timestamptz not null default now()
+        )`;
+        await sql`create table if not exists wa_messages (
+            id bigserial primary key,
+            phone text not null,
+            direction text not null,
+            text text not null,
+            kind text not null default 'text',
+            created_at timestamptz not null default now()
+        )`;
+        await sql`create index if not exists wa_messages_phone_idx on wa_messages (phone, created_at desc)`;
         await sql`create index if not exists events_created_idx on events (created_at)`;
         await sql`create index if not exists events_visitor_idx on events (visitor_id)`;
         await sql`create index if not exists visitors_lead_idx on visitors (lead_id)`;
@@ -97,9 +140,11 @@ export function pgRepo(sql) {
     })().catch(e => { ready = null; throw e; }));
 
     const units = unitsPg(sql, migrate);
+    const marketing = marketingPg(sql, migrate);
     return {
         kind: 'postgres',
         ...units,
+        ...marketing,
 
         // A walk-in / phone customer the builder books directly (no website visit)
         async upsertOfflineLead({ name, phone, plotId, status, notes }) {
@@ -118,11 +163,15 @@ export function pgRepo(sql) {
 
         async recordVisit(visitorId, meta) {
             await migrate();
-            const source = sourceFromReferrer(meta.referrer);
-            await sql`insert into visitors (id, visits, is_mobile, referrer, user_agent, source, cp)
-                values (${visitorId}, 1, ${meta.isMobile}, ${meta.referrer}, ${meta.userAgent}, ${source}, ${meta.cp || null})
+            const source = sourceOf(meta);
+            await sql`insert into visitors (id, visits, is_mobile, referrer, user_agent, source, cp, utm_source, utm_campaign, utm_content)
+                values (${visitorId}, 1, ${meta.isMobile}, ${meta.referrer}, ${meta.userAgent}, ${source}, ${meta.cp || null},
+                        ${meta.utmSource || null}, ${meta.utmCampaign || null}, ${meta.utmContent || null})
                 on conflict (id) do update set visits = visitors.visits + 1, last_seen = now(),
-                    source = coalesce(visitors.source, excluded.source), cp = coalesce(visitors.cp, excluded.cp)`;
+                    source = coalesce(visitors.source, excluded.source), cp = coalesce(visitors.cp, excluded.cp),
+                    utm_source = coalesce(visitors.utm_source, excluded.utm_source),
+                    utm_campaign = coalesce(visitors.utm_campaign, excluded.utm_campaign),
+                    utm_content = coalesce(visitors.utm_content, excluded.utm_content)`;
             await sql`insert into events (visitor_id, type) values (${visitorId}, 'visit')`;
         },
 
@@ -135,15 +184,17 @@ export function pgRepo(sql) {
         async upsertLead({ visitorId, name, phone, plotId, message, cp }) {
             await migrate();
             // First broker to bring a customer keeps the credit (first-touch); later links don't overwrite it
-            const [lead] = await sql`insert into leads (name, phone, interested_plot, message, source, cp)
+            const [lead] = await sql`insert into leads (name, phone, interested_plot, message, source, cp, campaign)
                 values (${name}, ${phone}, ${plotId}, ${message},
                         coalesce((select source from visitors where id = ${visitorId}), 'direct'),
-                        coalesce(${cp || null}, (select cp from visitors where id = ${visitorId})))
+                        coalesce(${cp || null}, (select cp from visitors where id = ${visitorId})),
+                        (select utm_campaign from visitors where id = ${visitorId}))
                 on conflict (phone) do update set
                     name = excluded.name,
                     interested_plot = coalesce(excluded.interested_plot, leads.interested_plot),
                     message = coalesce(excluded.message, leads.message),
                     cp = coalesce(leads.cp, excluded.cp),
+                    campaign = coalesce(leads.campaign, excluded.campaign),
                     enquiries = leads.enquiries + 1,
                     updated_at = now()
                 returning id`;
@@ -156,7 +207,7 @@ export function pgRepo(sql) {
         async listLeads() {
             await migrate();
             const rows = await sql`select l.id, l.name, l.phone, l.interested_plot, l.message, l.status, l.notes,
-                    l.enquiries, l.created_at, l.updated_at, coalesce(l.source, 'direct') as source, l.cp,
+                    l.enquiries, l.created_at, l.updated_at, coalesce(l.source, 'direct') as source, l.cp, l.campaign, l.email, l.ai_summary,
                     l.follow_up::text as follow_up, l.is_demo,
                     coalesce(v.visits, 0)::int as visits,
                     v.last_seen,
@@ -363,10 +414,12 @@ function memoryRepo() {
     const leadVisitors = (lead) => [...visitors.values()].filter(v => v.lead_id === lead.id);
     const units = unitsMemory();
     units._events = () => events;
+    const marketing = marketingMemory(() => ({ visitors, events, leads, nextLeadId: () => nextLeadId++ }));
 
     return {
         kind: 'memory',
         ...units,
+        ...marketing,
 
         async upsertOfflineLead({ name, phone, plotId, status, notes }) {
             let lead = leads.find(l => l.phone === phone);
@@ -389,8 +442,11 @@ function memoryRepo() {
             const v = touch(visitorId);
             v.visits += 1;
             v.is_mobile = meta.isMobile;
-            if (fresh) v.source = sourceFromReferrer(meta.referrer);
+            if (fresh) v.source = sourceOf(meta);
             v.cp ??= meta.cp || null;
+            v.utm_source ??= meta.utmSource || null;
+            v.utm_campaign ??= meta.utmCampaign || null;
+            v.utm_content ??= meta.utmContent || null;
             events.push({ visitor_id: visitorId, type: 'visit', plot_id: null, created_at: now() });
         },
 
@@ -411,7 +467,7 @@ function memoryRepo() {
                 lead = {
                     id: nextLeadId++, name, phone, interested_plot: plotId, message, status: 'new', notes: null,
                     enquiries: 1, created_at: now(), updated_at: now(), source: visitors.get(visitorId)?.source || 'direct',
-                    follow_up: null, is_demo: false, cp: partner,
+                    follow_up: null, is_demo: false, cp: partner, campaign: visitors.get(visitorId)?.utm_campaign || null,
                 };
                 leads.push(lead);
             }

@@ -7,6 +7,22 @@ export function send(res, status, body) {
     res.end(JSON.stringify(body));
 }
 
+// Raw body text (needed to check webhook signatures); also parsed JSON.
+export async function readRaw(req) {
+    if (typeof req.rawBody === 'string') return req.rawBody;
+    if (typeof req.body === 'string') return req.body;
+    if (req.body && typeof req.body === 'object') return JSON.stringify(req.body);
+    const chunks = [];
+    let size = 0;
+    for await (const chunk of req) {
+        size += chunk.length;
+        if (size > 256 * 1024) throw Object.assign(new Error('Payload too large'), { status: 413 });
+        chunks.push(chunk);
+    }
+    req.rawBody = Buffer.concat(chunks).toString('utf8');
+    return req.rawBody;
+}
+
 export async function readJson(req) {
     if (req.body && typeof req.body === 'object') return req.body;
     if (typeof req.body === 'string') return safeParse(req.body);
