@@ -16,6 +16,7 @@ export default route(['POST'], async (req, res) => {
         await repo.recordVisit(visitorId, {
             userAgent: ua,
             referrer: cleanText(body.referrer, 300),
+            cp: cleanText(body.cp, 40),
             isMobile: /Mobi|Android|iPhone/i.test(ua || ''),
         });
     } else {

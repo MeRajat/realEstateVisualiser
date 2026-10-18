@@ -30,7 +30,9 @@ const C = {
     wall: 0xd9cfb6,
     Available: 0x5bb974,   // Google Green 400
     Sold: 0xbdc1c6,        // Google Grey 400
-    Reserved: 0xfbbc04,
+    Reserved: 0x9aa0a6,
+    Hold: 0xfdd663,
+    Booked: 0xf5a97f,
     selected: 0x1a73e8,    // Google Blue
     dim: 0x9aa0a6,
 };
@@ -416,7 +418,7 @@ export function create3DView(el, { compass } = {}) {
 
     // Overview: plots as raised, colour-coded blocks. Walking: realistic open land — a low
     // kerb of natural ground, tinted only slightly by status, so the site reads as it really looks.
-    const WALK_TINT = { Available: 0x9fb36a, Sold: 0xa79a80, Reserved: 0xb9a36a };
+    const WALK_TINT = { Available: 0x9fb36a, Sold: 0xa79a80, Reserved: 0xa79a80, Hold: 0xb9a36a, Booked: 0xb59a7a };
     function stylePlots() {
         const walking = walk?.active;
         outerTrees.visible = !!walking;

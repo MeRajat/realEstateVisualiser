@@ -25,6 +25,15 @@ function post(url, body) {
     });
 }
 
+// A broker shares links like ?cp=Rakesh so every lead from that link is credited to them
+export const channelPartner = (() => {
+    try {
+        const fromUrl = new URLSearchParams(location.search).get('cp');
+        if (fromUrl) { localStorage.setItem('gm_cp', fromUrl.slice(0, 40)); return fromUrl.slice(0, 40); }
+        return localStorage.getItem('gm_cp') || null;
+    } catch { return null; }
+})();
+
 export function track(type, extra = {}) {
     post('/api/track', { visitorId, type, ...extra }).catch(() => {});
 }
@@ -35,7 +44,7 @@ export function trackVisit() {
         if (sessionStorage.getItem('gm_visit')) return;
         sessionStorage.setItem('gm_visit', '1');
     } catch { /* ignore */ }
-    track('visit', { referrer: document.referrer || null });
+    track('visit', { referrer: document.referrer || null, cp: channelPartner });
 }
 
 let lastViewed = null;
@@ -50,7 +59,7 @@ export function trackPlotView(plotId) {
 export async function submitLead({ name, phone, plotId, website }) {
     let res;
     try {
-        res = await post('/api/lead', { visitorId, name, phone, plotId, website });
+        res = await post('/api/lead', { visitorId, name, phone, plotId, website, cp: channelPartner });
     } catch (err) {
         console.error('[lead] network error, lead not saved', err);
         return { ok: false, saved: false };

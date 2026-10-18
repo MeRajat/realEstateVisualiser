@@ -8,15 +8,19 @@ import { trackVisit, trackPlotView, track, submitLead } from './api.js';
 import { createPlanView } from './plan.js';
 import { renderSheet, renderLayoutFloor } from './sheet.js';
 import { isMobile } from './layout.js';
+import { startLiveInventory } from './live.js';
 
 const $ = (id) => document.getElementById(id);
 
 // ─── STATIC CONTENT ──────────────────────────────────
 $('site-name').textContent = SITE.name;
 $('site-tagline').textContent = SITE.tagline;
-$('stat-available').textContent = stats.available;
-$('stat-sold').textContent = stats.sold;
-$('stat-total').textContent = stats.total;
+function renderStats() {
+    $('stat-available').textContent = stats.available;
+    $('stat-sold').textContent = stats.sold;
+    $('stat-total').textContent = stats.total;
+}
+renderStats();
 
 // ─── TOAST ───────────────────────────────────────────
 let toastTimer;
@@ -124,6 +128,7 @@ on('select', ({ plot }) => {
     trackPlotView(plot.id);
 });
 on('lead', renderCurrentSheet);
+on('inventory', () => { renderStats(); if (state.selectedId) renderCurrentSheet(); });
 
 sheet.querySelector('.sheet-close').addEventListener('click', () => selectPlot(null));
 document.addEventListener('keydown', (e) => {
@@ -312,7 +317,7 @@ const filtersForm = $('filters-form');
 let draft = { ...state.filter };
 
 const FILTER_OPTIONS = {
-    status: [['all', 'All'], ['Available', 'Available'], ['Sold', 'Sold']],
+    status: [['all', 'All'], ['Available', 'Available'], ['Hold', 'On hold'], ['Sold', 'Sold']],
     zone: [['all', 'All'], ...ZONES.map(z => [z.id, z.name])],
     size: [['all', 'Any size'], ...SIZE_BUCKETS.map(b => [b.id, b.label])],
     facing: [['all', 'Any'], ['North', 'North'], ['East', 'East'], ['South', 'South'], ['West', 'West']],
@@ -377,6 +382,7 @@ $('nearby-btn').addEventListener('click', async () => {
 document.body.dataset.view = 'plan';
 compass.style.transform = `rotate(${GEO.rotationDeg}deg)`;
 trackVisit();
+startLiveInventory();
 
 function openFromHash() {
     const m = location.hash.match(/^#plot-(.+)$/);

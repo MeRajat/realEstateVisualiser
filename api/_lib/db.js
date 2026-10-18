@@ -2,6 +2,7 @@
 // otherwise (local dev only) an in-memory store so the app runs with zero setup.
 // Both implementations expose the same repository API.
 import { neon } from '@neondatabase/serverless';
+import { unitsPg, unitsMemory } from './units-repo.js';
 
 const DB_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 const TZ = 'Asia/Kolkata';
@@ -87,22 +88,41 @@ export function pgRepo(sql) {
         await sql`alter table leads add column if not exists source text`;
         await sql`alter table visitors add column if not exists source text`;
         await sql`alter table visitors add column if not exists is_demo boolean not null default false`;
+        await sql`alter table visitors add column if not exists cp text`;
+        await sql`alter table leads add column if not exists cp text`;
         await sql`create index if not exists events_created_idx on events (created_at)`;
         await sql`create index if not exists events_visitor_idx on events (visitor_id)`;
         await sql`create index if not exists visitors_lead_idx on visitors (lead_id)`;
         await sql`create index if not exists leads_follow_up_idx on leads (follow_up) where follow_up is not null`;
     })().catch(e => { ready = null; throw e; }));
 
+    const units = unitsPg(sql, migrate);
     return {
         kind: 'postgres',
+        ...units,
+
+        // A walk-in / phone customer the builder books directly (no website visit)
+        async upsertOfflineLead({ name, phone, plotId, status, notes }) {
+            await migrate();
+            const [lead] = await sql`insert into leads (name, phone, interested_plot, status, notes, source)
+                values (${name || 'Customer'}, ${phone}, ${plotId}, ${status}, ${notes}, 'walk_in')
+                on conflict (phone) do update set
+                    name = case when leads.name = 'Customer' then excluded.name else leads.name end,
+                    interested_plot = coalesce(excluded.interested_plot, leads.interested_plot),
+                    status = excluded.status,
+                    notes = coalesce(leads.notes, excluded.notes),
+                    updated_at = now()
+                returning id`;
+            return { id: Number(lead.id) };
+        },
 
         async recordVisit(visitorId, meta) {
             await migrate();
             const source = sourceFromReferrer(meta.referrer);
-            await sql`insert into visitors (id, visits, is_mobile, referrer, user_agent, source)
-                values (${visitorId}, 1, ${meta.isMobile}, ${meta.referrer}, ${meta.userAgent}, ${source})
+            await sql`insert into visitors (id, visits, is_mobile, referrer, user_agent, source, cp)
+                values (${visitorId}, 1, ${meta.isMobile}, ${meta.referrer}, ${meta.userAgent}, ${source}, ${meta.cp || null})
                 on conflict (id) do update set visits = visitors.visits + 1, last_seen = now(),
-                    source = coalesce(visitors.source, excluded.source)`;
+                    source = coalesce(visitors.source, excluded.source), cp = coalesce(visitors.cp, excluded.cp)`;
             await sql`insert into events (visitor_id, type) values (${visitorId}, 'visit')`;
         },
 
@@ -112,15 +132,18 @@ export function pgRepo(sql) {
             await sql`update visitors set last_seen = now() where id = ${visitorId}`;
         },
 
-        async upsertLead({ visitorId, name, phone, plotId, message }) {
+        async upsertLead({ visitorId, name, phone, plotId, message, cp }) {
             await migrate();
-            const [lead] = await sql`insert into leads (name, phone, interested_plot, message, source)
+            // First broker to bring a customer keeps the credit (first-touch); later links don't overwrite it
+            const [lead] = await sql`insert into leads (name, phone, interested_plot, message, source, cp)
                 values (${name}, ${phone}, ${plotId}, ${message},
-                        coalesce((select source from visitors where id = ${visitorId}), 'direct'))
+                        coalesce((select source from visitors where id = ${visitorId}), 'direct'),
+                        coalesce(${cp || null}, (select cp from visitors where id = ${visitorId})))
                 on conflict (phone) do update set
                     name = excluded.name,
                     interested_plot = coalesce(excluded.interested_plot, leads.interested_plot),
                     message = coalesce(excluded.message, leads.message),
+                    cp = coalesce(leads.cp, excluded.cp),
                     enquiries = leads.enquiries + 1,
                     updated_at = now()
                 returning id`;
@@ -133,7 +156,7 @@ export function pgRepo(sql) {
         async listLeads() {
             await migrate();
             const rows = await sql`select l.id, l.name, l.phone, l.interested_plot, l.message, l.status, l.notes,
-                    l.enquiries, l.created_at, l.updated_at, coalesce(l.source, 'direct') as source,
+                    l.enquiries, l.created_at, l.updated_at, coalesce(l.source, 'direct') as source, l.cp,
                     l.follow_up::text as follow_up, l.is_demo,
                     coalesce(v.visits, 0)::int as visits,
                     v.last_seen,
@@ -338,9 +361,28 @@ function memoryRepo() {
         return v;
     };
     const leadVisitors = (lead) => [...visitors.values()].filter(v => v.lead_id === lead.id);
+    const units = unitsMemory();
+    units._events = () => events;
 
     return {
         kind: 'memory',
+        ...units,
+
+        async upsertOfflineLead({ name, phone, plotId, status, notes }) {
+            let lead = leads.find(l => l.phone === phone);
+            if (lead) {
+                if (lead.name === 'Customer' && name) lead.name = name;
+                if (plotId) lead.interested_plot = plotId;
+                lead.status = status;
+                lead.notes ??= notes;
+                lead.updated_at = now();
+            } else {
+                lead = { id: nextLeadId++, name: name || 'Customer', phone, interested_plot: plotId, message: null, status, notes,
+                    enquiries: 0, created_at: now(), updated_at: now(), source: 'walk_in', follow_up: null, is_demo: false };
+                leads.push(lead);
+            }
+            return { id: lead.id };
+        },
 
         async recordVisit(visitorId, meta) {
             const fresh = !visitors.has(visitorId);
@@ -348,6 +390,7 @@ function memoryRepo() {
             v.visits += 1;
             v.is_mobile = meta.isMobile;
             if (fresh) v.source = sourceFromReferrer(meta.referrer);
+            v.cp ??= meta.cp || null;
             events.push({ visitor_id: visitorId, type: 'visit', plot_id: null, created_at: now() });
         },
 
@@ -356,17 +399,19 @@ function memoryRepo() {
             events.push({ visitor_id: visitorId, type, plot_id: plotId, detail, created_at: now() });
         },
 
-        async upsertLead({ visitorId, name, phone, plotId, message }) {
+        async upsertLead({ visitorId, name, phone, plotId, message, cp }) {
             let lead = leads.find(l => l.phone === phone);
+            const partner = cp || visitors.get(visitorId)?.cp || null;
             if (lead) {
                 Object.assign(lead, { name, updated_at: now(), enquiries: lead.enquiries + 1 });
+                lead.cp ??= partner;
                 if (plotId) lead.interested_plot = plotId;
                 if (message) lead.message = message;
             } else {
                 lead = {
                     id: nextLeadId++, name, phone, interested_plot: plotId, message, status: 'new', notes: null,
                     enquiries: 1, created_at: now(), updated_at: now(), source: visitors.get(visitorId)?.source || 'direct',
-                    follow_up: null, is_demo: false,
+                    follow_up: null, is_demo: false, cp: partner,
                 };
                 leads.push(lead);
             }

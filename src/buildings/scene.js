@@ -19,7 +19,9 @@ const SLIDE = 6; // ft a selected unit slides out of the facade
 const C = {
     Available: 0x55b85a,
     Booked: 0xc4a254,
+    Hold: 0xe0c060,
     Sold: 0x8a948f,
+    Reserved: 0x8a948f,
     selected: 0x2dd4bf,
     dim: 0x3a423e,
     slab: 0xe9e4d8,

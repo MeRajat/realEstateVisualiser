@@ -136,6 +136,10 @@ export function createPlanView(el) {
         });
     }
     on('filter', applyFilter);
+    on('inventory', () => {
+        shapes.attr('data-status', d => d.status);
+        labels.attr('data-status', d => d.status);
+    });
 
     const reset = () => svg.transition().duration(500).call(zoom.transform, fitTransform());
 

@@ -18,6 +18,7 @@ export default route(['POST'], async (req, res) => {
         phone,
         plotId,
         message: cleanText(body.message, 500),
+        cp: cleanText(body.cp, 40),
     });
     send(res, 200, { ok: true, id: lead.id });
 });

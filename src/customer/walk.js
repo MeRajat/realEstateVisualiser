@@ -60,7 +60,7 @@ function signAtlas(list) {
         const x = (i % COLS) * CW, y = Math.floor(i / COLS) * CH;
         ctx.fillStyle = '#f4f1e8';
         ctx.fillRect(x, y, CW, CH);
-        ctx.fillStyle = p.status === 'Available' ? '#2e7d32' : '#6b7280';
+        ctx.fillStyle = p.status === 'Available' ? '#2e7d32' : p.status === 'Hold' ? '#b06000' : '#6b7280';
         ctx.fillRect(x, y + CH - 16, CW, 16);
         ctx.strokeStyle = '#2b2b2b';
         ctx.lineWidth = 4;
@@ -70,7 +70,7 @@ function signAtlas(list) {
         ctx.fillText(p.id, x + CW / 2, y + 23);
         ctx.fillStyle = '#ffffff';
         ctx.font = '700 11px Roboto, system-ui, sans-serif';
-        ctx.fillText(p.status.toUpperCase(), x + CW / 2, y + CH - 8);
+        ctx.fillText((p.status === 'Hold' ? 'ON HOLD' : p.status === 'Reserved' ? 'NOT FOR SALE' : p.status).toUpperCase(), x + CW / 2, y + CH - 8);
     });
     const tex = new CanvasTexture(canvas);
     tex.colorSpace = SRGBColorSpace;

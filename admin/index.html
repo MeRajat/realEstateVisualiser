@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#ffffff">
-    <title>Customer dashboard</title>
+    <title>Builder dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -60,8 +60,18 @@
             </div>
         </header>
 
+        <nav class="tabs-nav" id="tabs-nav" aria-label="Sections">
+            <button type="button" class="tab-btn is-active" data-tab="today"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span data-t="tabToday"></span></button>
+            <button type="button" class="tab-btn" data-tab="stock"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span data-t="tabStock"></span></button>
+            <button type="button" class="tab-btn" data-tab="customers"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c1.9.7 3.2 2.4 3.5 5.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-t="tabCustomers"></span></button>
+        </nav>
         <main class="content" id="content"></main>
     </div>
+
+    <!-- Plot / flat stock editor -->
+    <dialog id="unit" class="sheet-dialog">
+        <div class="sheet-card" id="unit-body"></div>
+    </dialog>
 
     <!-- Customer details -->
     <dialog id="customer" class="sheet-dialog">

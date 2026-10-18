@@ -1,5 +1,6 @@
 // Central app state shared by all views + a tiny event bus.
-import { plotById } from '../shared/site.js';
+import { plotById, plots, stats } from '../shared/site.js';
+import { SERVER_TO_TOKEN, tokenFromPlan } from '../shared/status.js';
 
 const LEAD_KEY = 'gm_lead';
 
@@ -48,7 +49,7 @@ export function activeFilterCount() {
 }
 
 export function matchesFilter(plot, f = state.filter) {
-    if (f.status !== 'all' && plot.status !== f.status) return false;
+    if (f.status === 'Sold' ? !['Sold', 'Booked', 'Reserved'].includes(plot.status) : f.status !== 'all' && plot.status !== f.status) return false;
     if (f.zone !== 'all' && plot.zone !== f.zone) return false;
     if (f.size !== 'all' && !SIZE_BUCKETS.find(b => b.id === f.size).test(plot.areaSqFt)) return false;
     if (f.facing !== 'all' && !plot.facing.some(x => x.dir === f.facing)) return false;
@@ -59,6 +60,28 @@ export function setLead(lead) {
     state.lead = lead;
     try { localStorage.setItem(LEAD_KEY, JSON.stringify(lead)); } catch { /* private mode */ }
     emit('lead', lead);
+}
+
+// Live stock from /api/inventory: overrides the static plan statuses and marks in-demand plots
+export function applyInventory({ units = [], hot = [] } = {}) {
+    const byId = new Map(units.map(u => [String(u.id), u]));
+    const hotById = new Map(hot.map(h => [String(h.id), h]));
+    plots.forEach(p => {
+        const u = byId.get(p.id);
+        p.status = u ? SERVER_TO_TOKEN[u.status] || 'Available' : tokenFromPlan(p.planStatus ?? (p.planStatus = p.status));
+        p.holdUntil = u?.hold_until || null;
+        if (u && u.price_lakh != null) {
+            p.priceLakh = u.price_lakh;
+            p.price = `₹${u.price_lakh} Lakh`;
+        }
+        p.hot = hotById.get(p.id) || null;
+    });
+    stats.available = plots.filter(p => p.status === 'Available').length;
+    stats.sold = plots.filter(p => p.status === 'Sold' || p.status === 'Booked').length;
+    stats.hold = plots.filter(p => p.status === 'Hold').length;
+    state.inventoryAt = Date.now();
+    emit('inventory', { units, hot });
+    emit('filter', state.filter);
 }
 
 export function setView(view) {

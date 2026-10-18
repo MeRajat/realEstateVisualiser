@@ -19,7 +19,11 @@
     --available-fill: #81c995;
     --available-ink: #0d652d;
     --sold: #9aa0a6;
-    --reserved: #fbbc04;         /* Google Yellow */
+    --reserved: #bdc1c6;         /* not for sale: grey */
+    --hold: #fdd663;             /* on hold: yellow */
+    --hold-ink: #b06000;
+    --booked: #f5a97f;           /* booked: orange */
+    --booked-ink: #b3400e;
     --green: #ceead6;
     --road: #dadce0;
     --danger: #d93025;           /* Google Red */
@@ -94,6 +98,8 @@ small { font-size: 0.78em; }
 .f-plot { fill: var(--available-fill); stroke: #ffffff; stroke-width: 0.9; cursor: pointer; }
 .f-plot[data-status='Sold'] { fill: #e3e5e8; }
 .f-plot[data-status='Reserved'] { fill: var(--reserved); }
+.f-plot[data-status='Hold'] { fill: var(--hold); }
+.f-plot[data-status='Booked'] { fill: var(--booked); }
 .f-plot.is-dim { opacity: 0.16; }
 .f-plot.is-selected { fill: var(--primary); stroke: var(--primary-dark); stroke-width: 2.5; vector-effect: non-scaling-stroke; opacity: 1; }
 @media (hover: hover) {
@@ -103,7 +109,9 @@ small { font-size: 0.78em; }
 
 .lbl { pointer-events: none; text-anchor: middle; dominant-baseline: central; font-weight: 700; transition: opacity 0.25s; }
 .lbl-plot { fill: var(--available-ink); }
-.lbl-plot[data-status='Sold'] { fill: #80868b; }
+.lbl-plot[data-status='Sold'], .lbl-plot[data-status='Reserved'] { fill: #80868b; }
+.lbl-plot[data-status='Hold'] { fill: var(--hold-ink); }
+.lbl-plot[data-status='Booked'] { fill: var(--booked-ink); }
 .lbl-plot.is-selected { fill: #ffffff; }
 .lbl-plot.is-dim { opacity: 0.25; }
 .lbl-road { fill: #5f6368; font-size: 6.5px; font-weight: 600; letter-spacing: 0.08em; }
@@ -119,7 +127,9 @@ small { font-size: 0.78em; }
     background: var(--surface-solid); border: 1px solid var(--border-strong); box-shadow: var(--shadow);
 }
 .st-Available { color: var(--available); }
-.st-Sold { color: var(--sold); }
+.st-Sold, .st-Reserved { color: var(--sold); }
+.st-Hold { color: var(--hold-ink); }
+.st-Booked { color: var(--booked-ink); }
 
 /* ─── TOP BAR ────────────────────────────────────────── */
 #topbar {
@@ -179,6 +189,8 @@ small { font-size: 0.78em; }
 .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .dot.available { background: var(--available-fill); }
 .dot.sold { background: #e3e5e8; border: 1px solid #bdc1c6; }
+.dot.hold { background: var(--hold); }
+.dot.booked { background: var(--booked); }
 .dot.green { background: var(--green); border: 1px solid #a8dab5; }
 .dot.road { background: var(--road); }
 
@@ -264,7 +276,12 @@ body[data-view='map'] #view-controls .map-only { display: grid !important; }
     font-size: 12px; font-weight: 500; letter-spacing: 0.01em;
 }
 .status-pill.st-Available { background: #e6f4ea; color: #137333; }
-.status-pill.st-Sold { background: var(--surface-2); color: var(--muted); }
+.status-pill.st-Sold, .status-pill.st-Reserved { background: var(--surface-2); color: var(--muted); }
+.status-pill.st-Hold { background: #fef7e0; color: var(--hold-ink); }
+.status-pill.st-Booked { background: #fdebd9; color: var(--booked-ink); }
+.hot-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; background: #fce8e6; color: #c5221f; font-size: 12px; font-weight: 500; }
+.hold-note { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: #fef7e0; color: #7a4a00; font-size: 14px; line-height: 1.4; }
+.consent { font-size: 12px; color: var(--muted); line-height: 1.4; margin: 2px 0 0; }
 .status-pill.st-Reserved { background: #fef7e0; color: #b06000; }
 .zone-pill { background: color-mix(in srgb, var(--zc, #888) 14%, white); color: #3c4043; }
 .zone-pill::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--zc, #888); margin-right: 6px; }

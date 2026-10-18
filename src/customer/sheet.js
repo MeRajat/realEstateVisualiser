@@ -1,5 +1,6 @@
 // Plot detail sheet content (bottom sheet on mobile, side panel on desktop).
 import { plots, formatPrice, ZONES } from '../shared/site.js';
+import { STATUS_LABEL } from '../shared/status.js';
 import { SIZE_BUCKETS } from './store.js';
 import { generateHouseLayout } from '../shared/house-layout.js';
 import { renderHousePlan } from './houseplan.js';
@@ -90,11 +91,14 @@ export function renderSheet(p, { unlocked }) {
     const facing = p.facing.length ? p.facing.map(f => f.dir).join(' & ') : '—';
     const ppsf = pricePerSqFt(p);
     const sold = p.status !== 'Available';
+    const onHold = p.status === 'Hold';
+    const hot = p.hot && p.status === 'Available';
 
     const head = `
         <div class="sheet-head">
             <div class="pills-row">
-                <span class="status-pill st-${esc(p.status)}">${esc(p.status)}</span>
+                <span class="status-pill st-${esc(p.status)}">${esc(STATUS_LABEL.en[p.status] || p.status)}</span>
+                ${hot ? `<span class="hot-pill">🔥 ${p.hot.people >= 3 ? `${p.hot.people} people asked this week` : 'In demand'}</span>` : ''}
                 ${zone ? `<span class="zone-pill" style="--zc:${zone.color}">${zone.name}</span>` : ''}
                 ${p.facing.length > 1 ? '<span class="zone-pill corner">Corner plot</span>' : ''}
             </div>
@@ -128,7 +132,8 @@ export function renderSheet(p, { unlocked }) {
 
     const alternatives = sold
         ? `<div class="similar">
-                <p>This plot is ${p.status.toLowerCase()}. Similar plots still available nearby:</p>
+                ${onHold ? `<p class="hold-note">Someone has put this plot on hold for a short time. If it frees up we can tell you — tap <b>Enquire</b>.</p>` : ''}
+                <p>${onHold ? 'Meanwhile, similar' : `This plot is ${(STATUS_LABEL.en[p.status] || p.status).toLowerCase()}. Similar`} plots still available nearby:</p>
                 <div class="similar-list">${similarPlots(p).map(s =>
                     `<button type="button" data-action="goto" data-id="${esc(s.id)}"><b>Plot ${esc(s.id)}</b><span>${fmt(s.areaSqFt)} sq.ft${s.facing[0] ? ' · ' + s.facing[0].dir : ''}</span></button>`
                 ).join('')}</div>
@@ -137,7 +142,7 @@ export function renderSheet(p, { unlocked }) {
 
     const actions = `
         <div class="sheet-actions">
-            ${sold ? '' : `<button type="button" class="btn-primary" data-action="enquire">Enquire about this plot</button>`}
+            ${sold && !onHold ? '' : `<button type="button" class="btn-primary" data-action="enquire">${onHold ? 'Tell me if it frees up' : 'Enquire about this plot'}</button>`}
             <a class="btn-ghost" data-action="directions" target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M3 11 22 2l-9 19-2-8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Directions</a>
             <button type="button" class="btn-ghost" data-action="share">

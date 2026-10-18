@@ -1,6 +1,7 @@
 // Site configuration + derived plot data shared by the customer & builder apps.
 import rawPlots from './plots_data.json';
 import geo from './geo.json';
+import { tokenFromPlan } from './status.js';
 
 export const SITE = {
     name: 'The Greater Mansarovar',
@@ -8,6 +9,8 @@ export const SITE = {
     // Builder contact shown on the customer app. Leave empty to hide the buttons.
     phone: import.meta.env.VITE_BUILDER_PHONE || '',
     whatsapp: import.meta.env.VITE_BUILDER_WHATSAPP || '',
+    // RERA registration number, printed on every shared message / creative (required on Indian real-estate ads)
+    rera: import.meta.env.VITE_RERA_ID || '',
 };
 
 // ─── GEOGRAPHIC ANCHOR ───────────────────────────────
@@ -34,11 +37,7 @@ export const ZONES = [
     { id: 'D', name: 'Zone D', color: '#34a853', x1: 427, y1: 622, x2: 630, y2: 910 },
 ];
 
-export const STATUS_COLORS = {
-    Available: '#34a853',
-    Sold: '#9aa0a6',
-    Reserved: '#fbbc04',
-};
+export { STATUS_COLORS } from './status.js';
 
 // ─── GEOMETRY HELPERS ────────────────────────────────
 function bbox(points) {
@@ -116,7 +115,7 @@ export const features = rawPlots
             key: `${kind}-${i}`, // road ids repeat, so keep a unique key
             id: d.id,
             kind,
-            status: d.status,
+            status: kind === 'plot' ? tokenFromPlan(d.status) : d.status,
             price: d.price,
             area: d.area,
             areaSqFt: parseNumber(d.area),

@@ -9,6 +9,7 @@ import { floorPlanSVG } from './floorplan.js';
 import { track, trackVisit, submitLead } from '../customer/api.js';
 import { placeFrom, gateLatLng, directionsTo, directionsBetween } from './geo.js';
 import { KINDS } from '../shared/place-kinds.js';
+import { SERVER_TO_TOKEN, STATUS_LABEL } from '../shared/status.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -232,14 +233,14 @@ function unitSheet(u) {
     const similar = sold ? similarUnits(u) : [];
     return `
         <div class="sheet-head">
-            <span class="status-badge st-${u.status}">${u.status}</span>
+            <span class="status-badge st-${u.status}">${STATUS_LABEL.en[u.status] || u.status}</span>
             <span class="muted">${esc(u.tower.name)} · ${ordinal(u.floor)} floor</span>
         </div>
         <h2 class="sheet-title">Apartment ${esc(u.id)}</h2>
         <div class="tag-row">${tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
         ${tabs}
         <div class="tab-panel">${state.tab === 'plan' ? plan : overview}</div>
-        ${sold ? `<div class="notice">This apartment is ${u.status.toLowerCase()}.${similar.length ? ' Similar homes still available:' : ''}</div>
+        ${sold ? `<div class="notice">This apartment is ${(STATUS_LABEL.en[u.status] || u.status).toLowerCase()}.${similar.length ? ' Similar homes still available:' : ''}</div>
             <div class="similar">${similar.map(s => `<button type="button" class="similar-item" data-unit="${s.id}"><b>${s.id}</b><span>${ordinal(s.floor)} fl · ${DIR_NAMES[s.facing]}</span></button>`).join('')}</div>` : ''}
         <div class="sheet-actions">
             <button type="button" class="btn-secondary" data-action="view">
@@ -670,6 +671,29 @@ const rose = $('compass-rose');
 renderChips();
 updateCounts();
 trackVisit();
+
+// Live stock from the builder dashboard (hold / booked / sold), refreshed every minute
+async function syncInventory() {
+    try {
+        const res = await fetch('/api/inventory');
+        if (!res.ok) return;
+        const { units: live } = await res.json();
+        const by = new Map(live.map(u => [u.id, u]));
+        let changed = false;
+        units.forEach(u => {
+            u.planStatus ??= u.status;
+            const next = by.has(u.id) ? SERVER_TO_TOKEN[by.get(u.id).status] || 'Available' : u.planStatus;
+            if (next !== u.status) { u.status = next; changed = true; }
+        });
+        if (!changed) return;
+        stats.available = units.filter(u => u.status === 'Available').length;
+        updateCounts();
+        scene?.setFilter(u => matches(u, state.filter));
+        if (state.unit) renderUnitSheet();
+    } catch { /* keep last known */ }
+}
+syncInventory();
+setInterval(() => { if (document.visibilityState === 'visible') syncInventory(); }, 60000);
 
 async function boot() {
     // Let fonts settle so 3D labels use Outfit, but never block for long

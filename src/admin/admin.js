@@ -3,6 +3,7 @@
 import './admin.css';
 import { SITE, plots, features, boundary } from '../shared/site.js';
 import { t, getLang, setLang, sourceName, locale } from './i18n.js';
+import { createStock } from './stock.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
@@ -11,7 +12,8 @@ const STAGES = ['new', 'contacted', 'site_visit', 'negotiation', 'booked', 'lost
 const ACTIVE = ['new', 'contacted', 'site_visit', 'negotiation'];
 const DAY = 86400000;
 
-const ui = { days: 7, stage: 'all', search: '', plot: null, showAllCalls: false, shown: 20 };
+const ui = { days: 7, stage: 'all', search: '', plot: null, showAllCalls: false, shown: 20, tab: 'today' };
+const brief = { text: '', ai: null, loading: false, key: '' };
 let stats = null;
 let leads = [];
 
@@ -91,6 +93,13 @@ function toast(msg) {
     }, 2400);
 }
 
+// ─── Stock (inventory) module ────────────────────────
+const stock = createStock({ api, toast });
+stock.onChange = async (why) => {
+    if (why === 'saved') { brief.key = ''; await load({ quiet: true }); } else render();
+};
+stock.bind($('content'));
+
 // ─── Language ────────────────────────────────────────
 function applyStaticText() {
     document.querySelectorAll('[data-t]').forEach(el => { el.textContent = t(el.dataset.t); });
@@ -102,6 +111,7 @@ document.addEventListener('click', (e) => {
     if (!e.target.closest('[data-lang-toggle]')) return;
     setLang(getLang() === 'hi' ? 'en' : 'hi');
     applyStaticText();
+    brief.key = '';
     if (stats) render();
 });
 applyStaticText();
@@ -141,7 +151,7 @@ let lastLoaded = 0;
 async function load({ quiet = false } = {}) {
     document.body.classList.add('is-loading');
     try {
-        const [s, l] = await Promise.all([api(`/api/admin/stats?days=${ui.days}`), api('/api/admin/leads')]);
+        const [s, l] = await Promise.all([api(`/api/admin/stats?days=${ui.days}`), api('/api/admin/leads'), stock.load(7)]);
         stats = s;
         leads = l.leads;
         lastLoaded = Date.now();
@@ -174,17 +184,21 @@ function render() {
     const s = stats;
     const hasAnything = s.totals.leadsAll > 0 || s.totals.visitors > 0 || s.hasDemo;
     $('menu-demo').textContent = s.hasDemo ? t('demoRemove') : t('demoLoad');
+    document.querySelectorAll('[data-tab]').forEach(b => {
+        b.classList.toggle('is-active', b.dataset.tab === ui.tab);
+        b.setAttribute('aria-current', b.dataset.tab === ui.tab ? 'page' : 'false');
+    });
+    const demoBanner = s.hasDemo ? `<div class="banner"><span>${t('demoBanner')}</span><button type="button" class="btn btn-text" data-act="demo-clear">${t('demoRemove')}</button></div>` : '';
 
-    $('content').innerHTML = `
-        ${s.hasDemo ? `<div class="banner"><span>${t('demoBanner')}</span><button type="button" class="btn btn-text" data-act="demo-clear">${t('demoRemove')}</button></div>` : ''}
-        ${renderHello()}
-        ${hasAnything ? `
-            ${renderCalls()}
-            ${renderKpis()}
-            <section class="card" id="daily">
-                <h2>${t('dailyTitle')}</h2><p class="help">${t('dailyHelp')}</p>
-                <div class="chart" id="daily-chart"></div>
-            </section>
+    if (ui.tab === 'stock') {
+        $('content').innerHTML = demoBanner + '<div id="stock-root"></div>';
+        stock.render($('stock-root'));
+        return;
+    }
+
+    if (ui.tab === 'customers') {
+        $('content').innerHTML = `${demoBanner}
+            ${hasAnything ? `
             <section class="card" id="plots">
                 <h2>${t('plotsTitle')}</h2><p class="help">${t('plotsHelp')}</p>
                 <div class="plots-layout"><div class="plan" id="plan"></div><div>${renderPopular()}</div></div>
@@ -194,13 +208,91 @@ function render() {
                 ${renderJourney()}
             </div>
             <section class="card" id="customers">${renderCustomersShell()}</section>
-        ` : renderEmpty()}`;
-
-    if (hasAnything) {
-        drawDaily();
-        drawPlan();
-        renderCustomerList();
+            ` : renderEmpty()}`;
+        if (hasAnything) { drawPlan(); renderCustomerList(); }
+        return;
     }
+
+    // Today
+    $('content').innerHTML = `
+        ${demoBanner}
+        ${renderHello()}
+        ${renderBrief()}
+        ${hasAnything ? `
+            ${renderCalls()}
+            ${renderKpis()}
+            <section class="card" id="daily">
+                <h2>${t('dailyTitle')}</h2><p class="help">${t('dailyHelp')}</p>
+                <div class="chart" id="daily-chart"></div>
+            </section>
+        ` : renderEmpty()}
+        ${renderChanges()}`;
+    if (hasAnything) drawDaily();
+    loadBrief();
+}
+
+// ─── Morning note (AI, with a plain fallback) ────────
+function briefFacts() {
+    const f = stock.facts();
+    const today = todayStr();
+    const dayAgo = Date.now() - 864e5;
+    return {
+        ...f,
+        callsDue: callList().length,
+        newLeads: leads.filter(l => Date.parse(l.created_at) >= dayAgo).length,
+        hotCustomers: leads.filter(isHot).slice(0, 3).map(l => ({ name: l.name, plot: l.interested_plot })),
+        visitorsWeek: stats.totals.visitors, leadsWeek: stats.totals.leads, period: t(`period${ui.days}`), date: today,
+    };
+}
+
+function renderBrief() {
+    return `<section class="card brief" id="brief">
+        <div class="card-head"><div><h2>${t('briefTitle')}</h2><p class="help">${t('briefHelp')}</p></div>
+            <button type="button" class="btn btn-ghost btn-sm" data-act="brief-refresh" ${brief.loading ? 'disabled' : ''}>${t('briefRefresh')}</button></div>
+        <div class="brief-text" id="brief-text">${brief.loading && !brief.text ? `<span class="help">${t('briefLoading')}</span>` : esc(brief.text).replace(/\n/g, '<br>')}</div>
+        ${brief.text ? `<div class="brief-foot">${brief.ai === false ? `<span class="help">${t('briefBasic')}</span>` : '<span></span>'}
+            <a class="btn btn-tonal btn-sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(`${SITE.name} — ${new Date().toLocaleDateString(locale(), { day: 'numeric', month: 'short' })}\n${brief.text}`)}">${ICON.wa}${t('briefShare')}</a></div>` : ''}
+    </section>`;
+}
+
+async function loadBrief(force = false) {
+    const f = briefFacts();
+    const sig = [f.available, f.hold, f.booked, f.sold, f.callsDue, f.newLeads, f.holdsEnding.length, f.hot.length].join('-');
+    const key = `${getLang()}|${todayStr()}|${new Date().getHours()}|${sig}`;
+    if (!force && (brief.key === key || brief.loading)) return;
+    const cacheKey = `brief:${key}`;
+    if (!force) {
+        try {
+            const cached = sessionStorage.getItem(cacheKey);
+            if (cached) { Object.assign(brief, JSON.parse(cached), { key }); return paintBrief(); }
+        } catch { /* ignore */ }
+    }
+    brief.loading = true;
+    brief.key = key;
+    paintBrief();
+    try {
+        const r = await api('/api/admin/ai', { method: 'POST', body: JSON.stringify({ task: 'brief', facts: f, lang: getLang() }) });
+        brief.text = r.text;
+        brief.ai = r.ai;
+        try { sessionStorage.setItem(cacheKey, JSON.stringify({ text: r.text, ai: r.ai })); } catch { /* ignore */ }
+    } catch (err) { brief.text = brief.text || ''; if (!brief.text) toast(err.message); }
+    finally { brief.loading = false; paintBrief(); }
+}
+function paintBrief() {
+    const el = $('brief');
+    if (!el) return;
+    el.outerHTML = renderBrief();
+}
+
+function renderChanges() {
+    const ch = stock.recentChanges().slice(0, 8);
+    return `<section class="card">
+        <h2>${t('recentChanges')}</h2>
+        ${ch.length ? `<ul class="timeline">${ch.map(c => `<li><span class="tl-dot" aria-hidden="true"></span>
+            <span><button type="button" class="link" data-unit="${esc(c.unit_id)}">${t('plot', { id: esc(c.unit_id) })}</button>: ${c.from_status ? `${esc(stock.statusLabel(c.from_status))} → ` : ''}<b>${esc(stock.statusLabel(c.to_status))}</b>${c.customer_name ? ` · ${esc(c.customer_name)}` : ''}${c.price_lakh ? ` · ₹${c.price_lakh} L` : ''}</span>
+            <small>${ago(c.created_at)}${c.actor ? ` · ${t('byActor', { who: esc(c.actor) })}` : ''}</small></li>`).join('')}</ul>`
+        : `<p class="help">${t('noChanges')}</p>`}
+    </section>`;
 }
 
 function renderHello() {
@@ -476,7 +568,7 @@ function renderCustomerList() {
             <span class="avatar" aria-hidden="true">${initial(l.name)}</span>
             <span class="who-text">
                 <b>${esc(l.name)}${isHot(l) ? ' 🔥' : ''}</b>
-                <span>${prettyPhone(l.phone)}${l.interested_plot ? ` · ${what(l.interested_plot)}` : ''}</span>
+                <span>${prettyPhone(l.phone)}${l.interested_plot ? ` · ${what(l.interested_plot)}` : ''}${l.cp ? ` · ${t('viaBroker', { name: esc(l.cp) })}` : ''}</span>
                 <span class="small">${l.follow_up && ACTIVE.includes(l.status)
                     ? `<span class="${l.follow_up < today ? 'late' : ''}">${ICON.clock} ${t('callOn', { date: prettyDate(l.follow_up) })}</span>`
                     : t('lastSeen', { time: ago(l.last_seen || l.updated_at) })}</span>
@@ -503,7 +595,7 @@ async function openCustomer(id) {
         <header class="sheet-head">
             <span class="avatar lg" aria-hidden="true">${initial(l.name)}</span>
             <div class="who-text"><h2>${esc(l.name)}${isHot(l) ? ' 🔥' : ''}</h2>
-                <span>${prettyPhone(l.phone)} · ${t('fromSource', { source: esc(sourceName(l.source)) })}</span></div>
+                <span>${prettyPhone(l.phone)} · ${t('fromSource', { source: esc(sourceName(l.source)) })}${l.cp ? ` · ${t('viaBroker', { name: esc(l.cp) })}` : ''}</span></div>
             <button type="button" class="btn btn-ghost icon-only" data-act="close" aria-label="${esc(t('close'))}">${ICON.close}</button>
         </header>
         <div class="contact">
@@ -620,6 +712,7 @@ $('content').addEventListener('click', async (e) => {
             case 'export': exportCsv(); break;
             case 'demo-load': loadDemo(btn); break;
             case 'demo-clear': clearDemo(); break;
+            case 'brief-refresh': loadBrief(true); break;
         }
     } catch (err) { toast(err.message); }
 });
@@ -629,6 +722,14 @@ $('content').addEventListener('input', (e) => {
 $('content').addEventListener('keydown', (e) => {
     const g = e.target.closest?.('.pl-plot');
     if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); g.dispatchEvent(new MouseEvent('click', { bubbles: true })); }
+});
+
+$('tabs-nav').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tab]');
+    if (!b || b.dataset.tab === ui.tab) return;
+    ui.tab = b.dataset.tab;
+    render();
+    window.scrollTo({ top: 0 });
 });
 
 $('menu-demo').addEventListener('click', (e) => {
@@ -676,11 +777,11 @@ function csvCell(v) {
 }
 function exportCsv() {
     const list = filteredLeads();
-    const head = ['Name', 'Mobile', 'Stage', 'Interested in', 'Looked at', 'Call again on', 'Came from', 'Visits', 'First enquiry', 'Last seen', 'Notes'];
+    const head = ['Name', 'Mobile', 'Stage', 'Interested in', 'Looked at', 'Call again on', 'Came from', 'Broker', 'Visits', 'First enquiry', 'Last seen', 'Notes'];
     const rows = list.map(l => [
         l.name, `+91${l.phone}`, t(`stage_${l.status}`), l.interested_plot || '',
         (l.plots_viewed || []).map(p => `${p.plot} (${p.views})`).join('; '),
-        l.follow_up || '', sourceName(l.source), l.visits,
+        l.follow_up || '', sourceName(l.source), l.cp || '', l.visits,
         new Date(l.created_at).toLocaleString('en-IN'), l.last_seen ? new Date(l.last_seen).toLocaleString('en-IN') : '', l.notes || '',
     ]);
     const csv = '﻿' + [head, ...rows].map(r => r.map(csvCell).join(',')).join('\r\n');

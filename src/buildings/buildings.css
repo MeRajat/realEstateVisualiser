@@ -250,7 +250,8 @@ button:disabled { opacity: 0.4; cursor: default; }
 }
 .st-Available { background: rgba(85, 184, 90, 0.16); color: #7fd683; }
 .st-Booked { background: rgba(196, 162, 84, 0.16); color: #e2c27a; }
-.st-Sold { background: rgba(138, 148, 143, 0.18); color: #b9c2bd; }
+.st-Sold, .st-Reserved { background: rgba(138, 148, 143, 0.18); color: #b9c2bd; }
+.st-Hold { background: rgba(224, 192, 96, 0.16); color: #ecd58a; }
 .st-amenity { background: rgba(45, 212, 191, 0.14); color: var(--mint); }
 .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
 .tag {
