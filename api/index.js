@@ -1,4 +1,5 @@
-// The single Vercel function: every /api/* request is dispatched by server/router.js.
+// The single Vercel function: vercel.json rewrites every /api/* request here (as /api/index?p=<path>)
+// and server/router.js dispatches it to the right handler.
 import { route } from '../server/router.js';
 
 export const config = { maxDuration: 60 };

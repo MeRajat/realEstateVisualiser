@@ -24,8 +24,14 @@
     }
   ],
   "functions": {
-    "api/[...path].js": {
+    "api/index.js": {
       "includeFiles": "src/shared/plots_data.json"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index?p=:path*"
+    }
+  ]
 }

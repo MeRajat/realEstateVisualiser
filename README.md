@@ -80,7 +80,7 @@ admin/index.html         builder dashboard shell
 src/shared/              plot data (plots_data.json) + derived geometry, zones, facing, pricing
 src/customer/            customer app: plan.js (D3), view3d.js (three.js, lazy), mapview.js (Leaflet, lazy)
 src/admin/               dashboard UI
-api/[...path].js         the one Vercel function; dispatches to server/router.js
+api/index.js             the one Vercel function (vercel.json rewrites /api/* to it); dispatches to server/router.js
 server/                  API handlers (one file per endpoint, same names as the URL)
   track.js               anonymous visits / plot views (+ broker tag ?cp=)
   lead.js                lead capture (name + mobile)

@@ -146,3 +146,16 @@ test('push alerts report "not set up" without keys', async () => {
     const p = await call(push, { method: 'POST', headers, body: { subscription: { endpoint: 'https://x', keys: {} } } });
     assert.equal(p.status, 501);
 });
+
+test('router: Vercel rewrite form /api/index?p=<path> reaches the same handler with its query intact', async () => {
+    const { route } = await import('../server/router.js');
+    const r = await call(route, { url: '/api/index?p=admin/insights&days=7', headers });
+    assert.equal(r.status, 200, r.body);
+    assert.equal(r.json.days, 7);
+    const s = await call(route, { url: '/api/index?p=webhooks/meta&hub.mode=subscribe&hub.verify_token=meta-verify&hub.challenge=77' });
+    assert.ok([200, 403].includes(s.status));
+    const nf = await call(route, { url: '/api/index?p=nothing/here' });
+    assert.equal(nf.status, 404);
+    const plain = await call(route, { url: '/api/admin/settings', headers });
+    assert.equal(plain.status, 200);
+});

@@ -40,7 +40,18 @@ export function pathOf(req) {
     return new URL(req.url, 'http://x').pathname.replace(/^\/api\//, '').replace(/\/$/, '');
 }
 
+// On Vercel the request arrives rewritten as /api/index?p=<original path>&<original query>;
+// put the original URL back so handlers can parse req.url as usual.
+function unwrap(req) {
+    const u = new URL(req.url, 'http://x');
+    const p = u.searchParams.get('p');
+    if (p == null || !/^\/api\/(index)?$/.test(u.pathname)) return;
+    u.searchParams.delete('p');
+    req.url = `/api/${p.replace(/^\/+/, '')}${u.search}`;
+}
+
 export async function route(req, res) {
+    unwrap(req);
     const handler = handlers[pathOf(req)];
     if (!handler) {
         res.statusCode = 404;
