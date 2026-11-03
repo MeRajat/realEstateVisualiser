@@ -16,6 +16,7 @@ import admin_settings from './admin/settings.js';
 import admin_push from './admin/push.js';
 import webhooks_meta from './webhooks/meta.js';
 import webhooks_whatsapp from './webhooks/whatsapp.js';
+import virasat from '../virasat-homes/server/handler.js';
 
 export const handlers = {
     'track': track,
@@ -52,7 +53,10 @@ function unwrap(req) {
 
 export async function route(req, res) {
     unwrap(req);
-    const handler = handlers[pathOf(req)];
+    const path = pathOf(req);
+    // Virasat Homes keeps its own routes in virasat-homes/server/
+    if (path.startsWith('virasat/')) return virasat(req, res, path.slice('virasat/'.length));
+    const handler = handlers[path];
     if (!handler) {
         res.statusCode = 404;
         res.setHeader('Content-Type', 'application/json; charset=utf-8');

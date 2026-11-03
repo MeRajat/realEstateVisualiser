@@ -36,6 +36,8 @@ export default defineConfig(({ mode }) => {
                         main: 'index.html',
                         admin: 'admin/index.html',
                         buildings: 'buildings/index.html',
+                        virasat: 'virasat-homes/index.html',
+                        virasatAdmin: 'virasat-homes/admin/index.html',
                     })
                         .map(([name, file]) => [name, resolve(__dirname, file)])
                         .filter(([, file]) => existsSync(file)),

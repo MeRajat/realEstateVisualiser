@@ -21,11 +21,20 @@
           "value": "noindex"
         }
       ]
+    },
+    {
+      "source": "/virasat-homes/admin(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
     }
   ],
   "functions": {
     "api/index.js": {
-      "includeFiles": "src/shared/plots_data.json"
+      "includeFiles": "{src/shared/plots_data.json,virasat-homes/data/layout.json}"
     }
   },
   "rewrites": [
