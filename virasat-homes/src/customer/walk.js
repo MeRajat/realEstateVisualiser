@@ -188,9 +188,11 @@ export function buildProps(site) {
 
     // Approach road (gate → main road) and entrance arch with the colony's name
     const roadMat = new MeshLambertMaterial({ color: 0x3a3d3b });
-    const apGeo = new PlaneGeometry(APPROACH_FT + 4, GATE_HALF * 2 - 2).rotateX(-Math.PI / 2).rotateY(ANG)
-        .translate(GATE[0] + GDIR[0] * (APPROACH_FT / 2), 0.45, GATE[1] + GDIR[1] * (APPROACH_FT / 2));
-    const approach = new Mesh(apGeo, roadMat);
+    // Each 40 ft boulevard carries on as a road strip out to SH-2
+    const strips = (BOULEVARDS.length ? BOULEVARDS.map(r => ({ at: r.axis.b, w: r.axis.width })) : [{ at: GATE, w: GATE_HALF * 2 - 2 }])
+        .map(({ at, w }) => new PlaneGeometry(APPROACH_FT + 4, w).rotateX(-Math.PI / 2).rotateY(ANG)
+            .translate(at[0] + GDIR[0] * (APPROACH_FT / 2), 0.45, at[1] + GDIR[1] * (APPROACH_FT / 2)));
+    const approach = new Mesh(mergeGeometries(strips), roadMat);
     approach.receiveShadow = true;
     group.add(approach);
 

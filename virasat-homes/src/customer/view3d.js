@@ -196,13 +196,36 @@ export function create3DView(el, { compass } = {}) {
     base.receiveShadow = true;
     site.add(base);
 
-    const wallParts = boundary.points.map((p, i) => {
+    // Leave openings where a road runs out through the boundary (the entrances on SH-2)
+    const roadAxes = features.filter(f => f.kind === 'road' && f.axis).map(f => f.axis);
+    const inOpening = ([x, y]) => roadAxes.some(({ a, b, width }) => {
+        const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+        const t = ((x - a[0]) * dx + (y - a[1]) * dy) / L;
+        if (t < -6 || t > L + 6) return false;
+        return Math.abs((x - a[0]) * dy - (y - a[1]) * dx) / L < width / 2 + 1;
+    });
+    const wallParts = [];
+    boundary.points.forEach((p, i) => {
         const q = boundary.points[(i + 1) % boundary.points.length];
         const len = Math.hypot(q[0] - p[0], q[1] - p[1]);
-        const g = new BoxGeometry(len + 1.5, 7, 1.5);
-        g.rotateY(-Math.atan2(q[1] - p[1], q[0] - p[0]));
-        g.translate((p[0] + q[0]) / 2, 3.5, (p[1] + q[1]) / 2);
-        return g;
+        const STEP = 2;
+        let from = null;
+        const piece = (t0, t1) => {
+            if (t1 - t0 < 1) return;
+            const x0 = p[0] + ((q[0] - p[0]) * t0) / len, y0 = p[1] + ((q[1] - p[1]) * t0) / len;
+            const x1 = p[0] + ((q[0] - p[0]) * t1) / len, y1 = p[1] + ((q[1] - p[1]) * t1) / len;
+            const g = new BoxGeometry(t1 - t0 + 1.5, 7, 1.5);
+            g.rotateY(-Math.atan2(q[1] - p[1], q[0] - p[0]));
+            g.translate((x0 + x1) / 2, 3.5, (y0 + y1) / 2);
+            wallParts.push(g);
+        };
+        for (let t = 0; t <= len; t += STEP) {
+            const pt = [p[0] + ((q[0] - p[0]) * t) / len, p[1] + ((q[1] - p[1]) * t) / len];
+            const open = inOpening(pt);
+            if (!open && from === null) from = t;
+            if (open && from !== null) { piece(from, t); from = null; }
+        }
+        if (from !== null) piece(from, len);
     });
     const wall = new Mesh(mergeGeometries(wallParts), new MeshLambertMaterial({ color: C.wall }));
     wall.castShadow = true;
