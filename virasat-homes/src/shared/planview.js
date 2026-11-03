@@ -3,6 +3,7 @@
 import { select } from 'd3-selection';
 import { zoom, zoomIdentity } from 'd3-zoom';
 import 'd3-transition';
+import './planview.css';
 import { layout, centroid, bbox, NORTH_ON_PLAN } from './geo.js';
 
 const NS = 'http://www.w3.org/2000/svg';

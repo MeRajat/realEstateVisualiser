@@ -1,0 +1,14 @@
+/* plan svg */
+.planview { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.pv-site { fill: #cfcfcf; }
+.pv-boundary { fill: none; stroke: #c62828; stroke-width: 2.4; stroke-dasharray: 8 5; }
+.pv-amenity { stroke: none; }
+.pv-amenity-label { font: 600 10px system-ui, sans-serif; fill: #2e7d32; text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
+.pv-road-label { font: 600 7px system-ui, sans-serif; fill: #fff; letter-spacing: .6px; text-anchor: middle; dominant-baseline: middle; pointer-events: none; opacity: .95; }
+.pv-plot { stroke: #fff; stroke-width: .9; cursor: pointer; vector-effect: non-scaling-stroke; }
+.pv-plot.is-selected { fill: #1a73e8 !important; stroke: #0b3d91; stroke-width: 2.5; }
+.pv-label { font-family: system-ui, sans-serif; font-weight: 600; fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: rgba(0,0,0,.35); stroke-width: .6px; }
+.zoomed-far .pv-label { display: none; }
+.pv-compass-ring { fill: rgba(255,255,255,.9); stroke: #9aa0a6; }
+.pv-compass-n { fill: #c62828; }
+.pv-compass-t { font: 700 9px system-ui, sans-serif; text-anchor: middle; fill: #c62828; }
