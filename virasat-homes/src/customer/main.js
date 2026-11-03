@@ -1,299 +1,430 @@
-// Virasat Homes customer site: satellite map + plan + brochure, live availability, plot details, enquiry.
 import './styles.css';
-import { createMap } from './map.js';
-import { createPlanView } from '../shared/planview.js';
-import { toLatLng } from '../shared/geo.js';
-import { plots, plotById, project, STATUS, STATUS_ORDER, SIZE_BUCKETS, fmtNum, fmtMoney, facingText, priceOf, findPlot } from '../shared/plots.js';
-import broUrl from '../../assets/layout-plan.webp';
+import { SITE, GEO, PROJECT, plots, plotById, stats, ZONES, toLatLng, siteAreaAcres } from '../shared/site.js';
+import brochureUrl from '../../assets/layout-plan.webp';
 import gateUrl from '../../assets/gate.webp';
+import {
+    state, on, selectPlot, setFilter, setLead, setView, matchesFilter,
+    activeFilterCount, SIZE_BUCKETS, DEFAULT_FILTER,
+} from './store.js';
+import { trackVisit, trackPlotView, track, submitLead } from './api.js';
+import { createPlanView } from './plan.js';
+import { renderSheet, renderLayoutFloor } from './sheet.js';
+import { isMobile } from './layout.js';
+import { startLiveInventory } from './live.js';
 
-const $ = (s, r = document) => r.querySelector(s);
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const API = '/api/virasat';
-const PHONE = (import.meta.env.VITE_VIRASAT_PHONE || '').replace(/\D/g, '');
-const WHATSAPP = (import.meta.env.VITE_VIRASAT_WHATSAPP || PHONE).replace(/\D/g, '');
+const $ = (id) => document.getElementById(id);
 
-// ─── visitor id + tracking (anonymous) ──────────────
-function store(kind) { try { return window[kind]; } catch { return null; } }
-function visitorId() {
-    const ls = store('localStorage');
-    let id = null;
-    try { id = ls?.getItem('vh_vid'); } catch { /* blocked */ }
-    if (!id) {
-        id = (crypto.randomUUID?.() || Math.random().toString(36).slice(2) + Date.now().toString(36)).replace(/[^A-Za-z0-9-]/g, '');
-        try { ls?.setItem('vh_vid', id); } catch { /* private mode */ }
+// ─── STATIC CONTENT ──────────────────────────────────
+$('site-name').textContent = SITE.name;
+$('site-tagline').textContent = SITE.tagline;
+function renderStats() {
+    $('stat-available').textContent = stats.available;
+    $('stat-sold').textContent = stats.sold;
+    $('stat-total').textContent = stats.total;
+}
+renderStats();
+
+// ─── TOAST ───────────────────────────────────────────
+let toastTimer;
+function toast(html, ms = 3200) {
+    const el = $('toast');
+    el.innerHTML = html;
+    el.hidden = false;
+    requestAnimationFrame(() => el.classList.add('is-visible'));
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+        el.classList.remove('is-visible');
+        setTimeout(() => { el.hidden = true; }, 250);
+    }, ms);
+}
+
+// ─── VIEWS (plan eager, 3D + map lazy) ───────────────
+const compass = $('compass');
+const views = { plan: createPlanView($('view-plan')) };
+const loaders = {
+    '3d': async () => {
+        await document.fonts?.ready; // labels are drawn into a canvas texture
+        const { create3DView } = await import('./view3d.js');
+        return create3DView($('view-3d'), { compass });
+    },
+    map: async () => {
+        const { createMapView } = await import('./mapview.js');
+        return createMapView($('view-map'), { opacitySlider: $('opacity-slider'), compass });
+    },
+};
+
+let switching = 0;
+async function showView(name) {
+    if (name === state.view && views[name]) return;
+    const ticket = ++switching;
+    document.querySelectorAll('.seg').forEach(b => {
+        const active = b.dataset.view === name;
+        b.classList.toggle('is-active', active);
+        b.setAttribute('aria-selected', active);
+    });
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('is-active', v.id === `view-${name}`));
+    $('opacity-control').hidden = name !== 'map';
+    compass.style.transform = name === 'map' ? '' : `rotate(${GEO.rotationDeg}deg)`;
+    document.body.dataset.view = name;
+
+    const prev = views[state.view];
+    setView(name);
+    prev?.hide?.();
+
+    if (!views[name]) {
+        $('view-loading').hidden = false;
+        try {
+            views[name] = await loaders[name]();
+        } catch (err) {
+            console.error(err);
+            toast('Could not load this view. Please check your connection.');
+            $('view-loading').hidden = true;
+            return showView('plan');
+        }
+        $('view-loading').hidden = true;
     }
-    return id;
+    if (ticket !== switching) return; // user moved on while loading
+    views[name].show?.();
+    track('view_mode', { mode: name });
 }
-const VID = visitorId();
-const post = (path, body) => fetch(API + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true });
-const track = (type, extra = {}) => post('/track', { visitorId: VID, type, ...extra }).catch(() => {});
-(function trackVisit() {
-    const ss = store('sessionStorage');
-    try { if (ss?.getItem('vh_visit')) return; ss?.setItem('vh_visit', '1'); } catch { /* ignore */ }
-    const u = new URLSearchParams(location.search);
-    track('visit', { referrer: document.referrer || null, utmSource: u.get('utm_source') });
-})();
 
-// ─── state ─────────────────────────────────────────
-const state = { view: 'map', selected: null, statuses: new Set(), sizes: new Set(), facing: new Set() };
-const matches = (p) =>
-    (!state.statuses.size || state.statuses.has(p.status)) &&
-    (!state.sizes.size || SIZE_BUCKETS.some(b => state.sizes.has(b.id) && b.test(p.areaSqYd))) &&
-    (!state.facing.size || p.facing.some(f => state.facing.has(f.dir.split('-')[0])));
-const anyFilter = () => state.statuses.size || state.sizes.size || state.facing.size;
+document.querySelectorAll('.seg').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
 
-// ─── views ─────────────────────────────────────────
-const sheet = $('#sheet');
-function overlayPadding() {
-    const desktop = window.matchMedia('(min-width: 900px)').matches;
-    const sheetOpen = !sheet.hidden;
-    return {
-        top: 24,
-        left: 24,
-        right: desktop && sheetOpen ? sheet.offsetWidth + 40 : 64,
-        bottom: !desktop && sheetOpen ? Math.min(sheet.offsetHeight, window.innerHeight * 0.55) + 24 : 72,
-    };
-}
-const mapView = createMap($('#map'), {
-    fillOf: ({ id }) => { const p = plotById.get(id); return { color: STATUS[p.status].color, dim: anyFilter() && !matches(p) }; },
-    onSelect: (id) => selectPlot(id),
-    padding: overlayPadding,
-});
-const planView = createPlanView($('#plan'), {
-    fillOf: ({ id }) => { const p = plotById.get(id); return anyFilter() && !matches(p) ? '#dadce0' : STATUS[p.status].color; },
-    onSelect: (id) => selectPlot(id),
-    padding: overlayPadding,
+$('view-controls').addEventListener('click', (e) => {
+    const action = e.target.closest('button')?.dataset.action;
+    const view = views[state.view];
+    if (!view || !action) return;
+    if (action === 'zoom-in') view.zoomIn();
+    if (action === 'zoom-out') view.zoomOut();
+    if (action === 'reset') view.reset();
+    if (action === 'rotate-left') view.rotateLeft?.();
+    if (action === 'rotate-right') view.rotateRight?.();
 });
 
-function refresh() { mapView.update(); planView.update(); renderFilters(); }
+// ─── DETAIL SHEET ────────────────────────────────────
+const sheet = $('sheet');
+const sheetBody = $('sheet-body');
 
-function setView(v) {
-    state.view = v;
-    document.querySelectorAll('.seg [data-view]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === v)));
-    ['map', 'plan', 'brochure'].forEach(id => { $('#' + id).hidden = id !== v; });
-    document.body.dataset.view = v;
-    if (v === 'map') mapView.show();
-    if (v === 'brochure' && !$('#broImg').src) $('#broImg').src = broUrl;
-    if (state.selected && v !== 'brochure') focusSelected();
-}
-document.querySelectorAll('.seg [data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
-
-// ─── filters & legend ──────────────────────────────
-function renderFilters() {
-    const count = Object.fromEntries(STATUS_ORDER.map(s => [s, 0]));
-    plots.forEach(p => { count[p.status]++; });
-    const chips = STATUS_ORDER.filter(s => count[s] || s === 'available').map(s =>
-        `<button type="button" class="chip${state.statuses.has(s) ? ' on' : ''}" data-f="status" data-v="${s}"><i style="background:${STATUS[s].color}"></i>${STATUS[s].label} <b>${count[s]}</b></button>`).join('');
-    const sizes = SIZE_BUCKETS.map(b => `<button type="button" class="chip${state.sizes.has(b.id) ? ' on' : ''}" data-f="size" data-v="${b.id}">${b.label}</button>`).join('');
-    const facing = ['North', 'East', 'South', 'West'].map(d => `<button type="button" class="chip${state.facing.has(d) ? ' on' : ''}" data-f="facing" data-v="${d}">${d} facing</button>`).join('');
-    const n = plots.filter(matches).length;
-    $('#filters').innerHTML = chips + '<span class="sep"></span>' + sizes + '<span class="sep"></span>' + facing +
-        (anyFilter() ? `<button type="button" class="chip clear" data-f="clear">Clear · ${n} match</button>` : '');
-}
-$('#filters').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-f]');
-    if (!b) return;
-    const set = { status: state.statuses, size: state.sizes, facing: state.facing }[b.dataset.f];
-    if (b.dataset.f === 'clear') { state.statuses.clear(); state.sizes.clear(); state.facing.clear(); }
-    else if (set.has(b.dataset.v)) set.delete(b.dataset.v);
-    else set.add(b.dataset.v);
-    refresh();
-});
-$('#legend').innerHTML = STATUS_ORDER.slice(0, 4).map(s => `<span><i style="background:${STATUS[s].color}"></i>${STATUS[s].label}</span>`).join('') +
-    '<span><i style="background:#cfe8c6"></i>Park / green</span>';
-
-// ─── selection + details sheet ─────────────────────
-function focusSelected() {
-    if (!state.selected) return;
-    requestAnimationFrame(() => (state.view === 'plan' ? planView.focus(state.selected) : mapView.focus(state.selected)));
+function renderCurrentSheet() {
+    const plot = plotById.get(state.selectedId);
+    if (!plot) return;
+    sheetBody.innerHTML = renderSheet(plot, { unlocked: !!state.lead });
+    const [lat, lng] = toLatLng(plot.center);
+    const dir = sheetBody.querySelector('[data-action="directions"]');
+    if (dir) dir.href = `https://www.google.com/maps/dir/?api=1&destination=${lat.toFixed(6)},${lng.toFixed(6)}`;
 }
 
-function openSheet(html) {
-    $('#sheetBody').innerHTML = html;
-    sheet.hidden = false;
-    sheet.scrollTop = 0;
-    document.body.classList.add('sheet-open');
-}
-function closeSheet() {
-    sheet.hidden = true;
-    document.body.classList.remove('sheet-open');
-    if (state.selected) selectPlot(null);
-}
-sheet.querySelector('.sheet-close').addEventListener('click', closeSheet);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheet.hidden) closeSheet(); });
-
-function plotHtml(p) {
-    const st = STATUS[p.status];
-    const price = priceOf(p);
-    const canBuy = p.status === 'available' || p.status === 'hold';
-    const [lat, lng] = toLatLng(p.center);
-    return `
-      <div class="pd-head">
-        <h2>Plot ${esc(p.id)}</h2>
-        <span class="pill" style="--c:${st.color}">${st.label}</span>
-      </div>
-      <dl class="pd-grid">
-        <div><dt>Area</dt><dd>${fmtNum(p.areaSqYd, 2)} sq yd<small>${fmtNum(p.areaSqFt)} sq ft${p.areaSource === 'measured' ? ' · measured from plan' : ''}</small></dd></div>
-        <div><dt>Size</dt><dd>${p.dims ? esc(p.dims.label) : 'Irregular shape'}<small>${esc(p.category)} plot</small></dd></div>
-        <div class="wide"><dt>Faces</dt><dd>${esc(facingText(p))}</dd></div>
-        <div class="wide"><dt>Price</dt><dd>${price ? `${fmtMoney(price.total)}<small>₹${fmtNum(price.perSqYd)} per sq yd</small>` : 'Price on request'}</dd></div>
-      </dl>
-      ${canBuy ? `
-      <form class="lead" id="leadForm" novalidate>
-        <h3>${p.status === 'hold' ? 'On hold right now. Ask to be next in line' : 'Get price & site visit'}</h3>
-        <input name="name" autocomplete="name" placeholder="Your name" required maxlength="60">
-        <input name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="Mobile number (10 digits)" required maxlength="14">
-        <input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <button class="btn-primary" type="submit">Request a call back</button>
-        <p class="fine">We only use your number to call you about this project.</p>
-      </form>` : `<p class="note">This plot is ${st.label.toLowerCase()}. Tap a green plot to see one that is available.</p>`}
-      <div class="pd-actions">
-        <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${lat.toFixed(6)},${lng.toFixed(6)}" target="_blank" rel="noopener" data-track="directions">Directions</a>
-        <button class="btn" type="button" data-share>Share</button>
-        ${WHATSAPP ? `<a class="btn" href="https://wa.me/91${WHATSAPP}?text=${encodeURIComponent(`Hi, I am interested in Plot ${p.id} at Virasat Homes.`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
-        ${PHONE ? `<a class="btn" href="tel:+91${PHONE}">Call</a>` : ''}
-      </div>`;
-}
-
-function selectPlot(id, { focus = true } = {}) {
-    const p = id ? plotById.get(id) : null;
-    state.selected = p ? p.id : null;
-    mapView.select(state.selected);
-    planView.select(state.selected);
-    const hash = p ? '#plot=' + encodeURIComponent(p.id) : ' ';
-    history.replaceState(null, '', hash === ' ' ? location.pathname + location.search : hash);
-    if (!p) {
-        if (!sheet.hidden && $('#sheetBody .pd-head')) { sheet.hidden = true; document.body.classList.remove('sheet-open'); }
+on('select', ({ plot }) => {
+    if (!plot) {
+        sheet.classList.remove('is-open');
+        setTimeout(() => { if (!state.selectedId) sheet.hidden = true; }, 260);
+        history.replaceState(null, '', location.pathname + location.search);
         return;
     }
-    openSheet(plotHtml(p));
-    wirePlotSheet(p);
-    track('plot_view', { plotId: p.id });
-    if (focus) focusSelected();
-}
-
-function wirePlotSheet(p) {
-    $('#sheetBody [data-track="directions"]')?.addEventListener('click', () => track('directions', { plotId: p.id }));
-    $('#sheetBody [data-share]')?.addEventListener('click', async () => {
-        const url = location.origin + location.pathname + '#plot=' + encodeURIComponent(p.id);
-        const text = `Plot ${p.id} at Virasat Homes · ${fmtNum(p.areaSqYd, 2)} sq yd`;
-        try {
-            if (navigator.share) await navigator.share({ title: 'Virasat Homes', text, url });
-            else { await navigator.clipboard.writeText(url); toast('Link copied'); }
-        } catch { /* cancelled */ }
-    });
-    const form = $('#leadForm');
-    if (!form) return;
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const fd = new FormData(form);
-        const btn = form.querySelector('button');
-        btn.disabled = true;
-        btn.textContent = 'Sending…';
-        try {
-            const r = await post('/lead', { visitorId: VID, plotId: p.id, name: fd.get('name'), phone: fd.get('phone'), website: fd.get('website') });
-            const j = await r.json().catch(() => ({}));
-            if (!r.ok) throw new Error(j.error || 'Could not send. Please try again.');
-            form.outerHTML = `<div class="done"><b>Thank you, ${esc(fd.get('name'))}.</b><p>Our team will call you soon about Plot ${esc(p.id)}.</p></div>`;
-        } catch (err) {
-            btn.disabled = false;
-            btn.textContent = 'Request a call back';
-            toast(err.message);
-        }
-    });
-}
-
-// ─── project info ──────────────────────────────────
-function infoHtml() {
-    const avail = plots.filter(p => p.status === 'available').length;
-    return `
-      <img class="hero" src="${gateUrl}" alt="Entrance gate of Virasat Homes" loading="lazy">
-      <h2>${esc(project.name)}</h2>
-      <p class="muted">${esc(project.address)}</p>
-      <div class="facts">
-        <div><b>${plots.length}</b><span>plots</span></div>
-        <div><b>${avail}</b><span>available</span></div>
-        <div><b>15.5</b><span>acres</span></div>
-      </div>
-      <p class="rera">RERA: <b>${esc(project.rera)}</b> · <a href="https://rera.rajasthan.gov.in/" target="_blank" rel="noopener">rera.rajasthan.gov.in</a></p>
-      <h3>Amenities</h3>
-      <ul class="tags">${project.amenities.map(a => `<li>${esc(a)}</li>`).join('')}</ul>
-      <h3>Distances</h3>
-      <ul class="dist">${project.distances.map(([n, km]) => `<li><span>${esc(n)}</span><b>${km} km</b></li>`).join('')}</ul>
-      <h3>Developer</h3>
-      <p>${esc(project.developer)}<br><span class="muted">${esc(project.office)}</span><br><span class="muted">Promoter RERA ${esc(project.promoterRera)}</span></p>
-      <p class="fine">${esc(project.source)} Map placement is matched to the satellite photo and Kotkhawada Road; the developer's demarcation on site is final.</p>`;
-}
-$('#infoBtn').addEventListener('click', () => { if (state.selected) selectPlot(null); openSheet(infoHtml()); });
-
-// ─── search, buttons, toast ────────────────────────
-$('#search').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const p = findPlot($('#q').value);
-    if (!p) return toast('No plot with that number. Try 25, L3 or E12.');
-    $('#q').blur();
-    if (state.view === 'brochure') setView('map');
-    selectPlot(p.id);
+    renderCurrentSheet();
+    sheet.hidden = false;
+    sheet.style.transform = '';
+    requestAnimationFrame(() => sheet.classList.add('is-open'));
+    sheetBody.scrollTop = 0;
+    history.replaceState(null, '', `#plot-${encodeURIComponent(plot.id)}`);
+    trackPlotView(plot.id);
 });
-$('#fabs').addEventListener('click', async (e) => {
-    const act = e.target.closest('[data-act]')?.dataset.act;
-    const v = state.view === 'plan' ? planView : state.view === 'map' ? mapView : null;
-    if (act === 'in') v ? v.zoomIn() : broZoom(1.5);
-    if (act === 'out') v ? v.zoomOut() : broZoom(1 / 1.5);
-    if (act === 'fit') v ? (state.view === 'plan' ? planView.reset() : mapView.fit()) : broZoom(0);
-    if (act === 'me') {
-        try {
-            const d = await mapView.locate();
-            toast(`You are ${d > 1000 ? fmtNum(d / 1000, 1) + ' km' : Math.round(d) + ' m'} from Virasat Homes`);
-        } catch { toast('Could not get your location'); }
+on('lead', renderCurrentSheet);
+on('inventory', () => { renderStats(); if (state.selectedId) renderCurrentSheet(); });
+
+sheet.querySelector('.sheet-close').addEventListener('click', () => selectPlot(null));
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && state.selectedId && !document.querySelector('dialog[open]')) selectPlot(null);
+});
+
+sheetBody.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const plot = plotById.get(state.selectedId);
+    switch (btn.dataset.action) {
+        case 'unlock':
+            openLead({ plotId: plot.id });
+            break;
+        case 'enquire':
+            enquire(plot);
+            break;
+        case 'goto':
+            selectPlot(btn.dataset.id, 'ui');
+            break;
+        case 'share':
+            sharePlot(plot);
+            break;
+        case 'directions':
+            track('enquire', { plotId: plot.id });
+            break;
+        case 'layout-floor': {
+            const floor = btn.dataset.floor;
+            btn.parentElement.querySelectorAll('[data-floor]').forEach(b => {
+                b.classList.toggle('is-active', b === btn);
+                b.setAttribute('aria-selected', b === btn);
+            });
+            sheetBody.querySelector('.layout-sheet').innerHTML = renderLayoutFloor(plot, floor);
+            break;
+        }
+        case 'house-3d':
+            track('view_mode', { mode: 'house' });
+            await showView('3d');
+            views['3d']?.showHouse(plot);
+            break;
     }
 });
-$('#opacity').addEventListener('input', (e) => mapView.setOpacity(e.target.value / 100));
 
-let broScale = 1;
-function broZoom(f) {
-    broScale = f === 0 ? 1 : Math.min(5, Math.max(1, broScale * f));
-    $('#broImg').style.width = broScale * 100 + '%';
-}
-
-let toastTimer;
-function toast(msg) {
-    const t = $('#toast');
-    t.textContent = msg;
-    t.hidden = false;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
-}
-
-// ─── live availability ─────────────────────────────
-async function loadInventory() {
+async function sharePlot(plot) {
+    const url = `${location.origin}${location.pathname}#plot-${encodeURIComponent(plot.id)}`;
+    const text = `Plot ${plot.id} · ${plot.area} at ${SITE.name}`;
     try {
-        const r = await fetch(API + '/inventory');
-        if (!r.ok) return;
-        const { plots: rows } = await r.json();
-        const sel = state.selected && plotById.get(state.selected);
-        const before = sel ? sel.status + '|' + sel.pricePerSqYd : '';
-        for (const row of rows) {
-            const p = plotById.get(row.id);
-            if (p) { p.status = STATUS[row.status] ? row.status : 'available'; p.pricePerSqYd = row.pricePerSqYd; }
+        if (navigator.share) await navigator.share({ title: SITE.name, text, url });
+        else {
+            await navigator.clipboard.writeText(url);
+            toast('Link copied');
         }
-        refresh();
-        // only redraw an open plot card when that plot actually changed
-        if (sel && before !== sel.status + '|' + sel.pricePerSqYd && $('#sheetBody .pd-head')) {
-            const p = plotById.get(state.selected);
-            openSheet(plotHtml(p));
-            wirePlotSheet(p);
-        }
-    } catch { /* offline: keep last known */ }
+    } catch { /* user cancelled */ }
 }
 
-// ─── start ─────────────────────────────────────────
-refresh();
-setView('map');
-loadInventory().then(() => {
-    const m = /plot=([^&]+)/.exec(location.hash);
-    if (m && plotById.has(decodeURIComponent(m[1]))) selectPlot(decodeURIComponent(m[1]));
+// Swipe the mobile sheet down to dismiss
+(() => {
+    let startY = null;
+    let dy = 0;
+    const grip = sheet.querySelector('.sheet-grip');
+    const begin = (e) => {
+        if (!isMobile()) return;
+        if (e.target !== grip && sheetBody.scrollTop > 0) return;
+        startY = e.touches[0].clientY;
+        dy = 0;
+        sheet.style.transition = 'none';
+    };
+    const move = (e) => {
+        if (startY == null) return;
+        dy = Math.max(0, e.touches[0].clientY - startY);
+        if (dy > 0) sheet.style.transform = `translateY(${dy}px)`;
+    };
+    const end = () => {
+        if (startY == null) return;
+        sheet.style.transition = '';
+        sheet.style.transform = '';
+        if (dy > 90) selectPlot(null);
+        startY = null;
+    };
+    sheet.addEventListener('touchstart', begin, { passive: true });
+    sheet.addEventListener('touchmove', move, { passive: true });
+    sheet.addEventListener('touchend', end);
+    sheet.addEventListener('touchcancel', end);
+})();
+
+// ─── LEAD CAPTURE (soft gate) ────────────────────────
+const leadDialog = $('lead-dialog');
+const leadForm = $('lead-form');
+let leadContext = null;
+
+function openLead({ plotId = null, title, sub, submitLabel } = {}) {
+    leadContext = { plotId };
+    $('lead-title').textContent = title || 'See price & full details';
+    $('lead-sub').textContent = sub || 'Share your number to unlock prices, plot sizes and layouts. Our team can also call you back with offers.';
+    $('lead-submit').textContent = submitLabel || 'Continue';
+    $('lead-plot-field').hidden = !plotId;
+    leadForm.plotId.value = plotId ? `Plot ${plotId}` : '';
+    $('lead-error').hidden = true;
+    if (state.lead) {
+        leadForm.name.value = state.lead.name;
+        leadForm.phone.value = state.lead.phone;
+    }
+    leadDialog.showModal();
+    setTimeout(() => (leadForm.name.value ? leadForm.phone : leadForm.name).focus(), 50);
+}
+
+leadDialog.querySelector('[data-close]').addEventListener('click', () => leadDialog.close());
+leadDialog.addEventListener('click', (e) => { if (e.target === leadDialog) leadDialog.close(); });
+
+leadForm.phone.addEventListener('input', () => {
+    leadForm.phone.value = leadForm.phone.value.replace(/[^\d ]/g, '');
 });
-setInterval(() => { if (document.visibilityState === 'visible') loadInventory(); }, 60000);
-window.addEventListener('resize', () => { if (state.view === 'map') mapView.map.invalidateSize(); });
+
+leadForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = leadForm.name.value.trim();
+    const phone = leadForm.phone.value.replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, '');
+    const err = $('lead-error');
+    const fail = (msg, field) => { err.textContent = msg; err.hidden = false; field?.focus(); };
+    if (name.length < 2) return fail('Please enter your name.', leadForm.name);
+    if (!/^[6-9]\d{9}$/.test(phone)) return fail('Please enter a valid 10-digit mobile number.', leadForm.phone);
+
+    const btn = $('lead-submit');
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+    try {
+        await submitLead({ name, phone, plotId: leadContext?.plotId, website: leadForm.website.value });
+        setLead({ name, phone });
+        leadDialog.close();
+        const first = name.split(' ')[0];
+        toast(leadContext?.plotId
+            ? `Thanks ${esc(first)}! Details unlocked. Our team will reach you on ${phone.slice(0, 5)} ${phone.slice(5)}.`
+            : `Thanks ${esc(first)}! Our team will call you shortly.`);
+    } catch (ex) {
+        fail(ex.message);
+    } finally {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+    }
+});
+
+const esc = (s) => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+
+function contactLinks(plot) {
+    const msg = encodeURIComponent(`Hi, I'm interested in ${plot ? `Plot ${plot.id} (${plot.area})` : 'plots'} at ${SITE.name}.`);
+    const links = [];
+    if (SITE.phone) links.push(`<a href="tel:+${SITE.phone}">Call now</a>`);
+    if (SITE.whatsapp) links.push(`<a href="https://wa.me/${SITE.whatsapp}?text=${msg}" target="_blank" rel="noopener">WhatsApp</a>`);
+    return links.length ? `<span class="toast-links">${links.join('')}</span>` : '';
+}
+
+async function enquire(plot) {
+    if (!state.lead) {
+        openLead({
+            plotId: plot?.id,
+            title: plot ? `Enquire about Plot ${plot.id}` : 'Get a call back',
+            sub: 'Leave your number and our sales team will call you with price, offers and a site visit slot.',
+            submitLabel: 'Request call back',
+        });
+        return;
+    }
+    track('enquire', { plotId: plot?.id });
+    submitLead({ ...state.lead, plotId: plot?.id }).catch(() => {});
+    toast(`Thanks ${esc(state.lead.name.split(' ')[0])}! We'll call you about ${plot ? `Plot ${esc(plot.id)}` : 'available plots'} shortly.${contactLinks(plot)}`, 6000);
+}
+
+$('enquire-btn').addEventListener('click', () => enquire(plotById.get(state.selectedId)));
+
+// ─── SEARCH ──────────────────────────────────────────
+$('search-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const q = $('search-input').value.trim().toUpperCase().replace(/^PLOT\s*/, '');
+    if (!q) return;
+    const plot = plotById.get(q) || plots.find(p => p.id.toUpperCase() === q);
+    if (plot) {
+        $('search-input').blur();
+        selectPlot(plot.id, 'search');
+    } else {
+        toast(`No plot numbered “${esc(q)}”. Try 25, L3 or E12.`);
+    }
+});
+
+// ─── FILTERS ─────────────────────────────────────────
+const filtersDialog = $('filters-dialog');
+const filtersForm = $('filters-form');
+let draft = { ...state.filter };
+
+const FILTER_OPTIONS = {
+    status: [['all', 'All'], ['Available', 'Available'], ['Hold', 'On hold'], ['Sold', 'Sold']],
+    zone: [['all', 'All'], ...ZONES.map(z => [z.id, z.name])],
+    size: [['all', 'Any size'], ...SIZE_BUCKETS.map(b => [b.id, b.label])],
+    facing: [['all', 'Any'], ['North', 'North'], ['East', 'East'], ['South', 'South'], ['West', 'West']],
+};
+
+// This layout has no zones: hide that row
+if (!ZONES.length) filtersForm.querySelector('[data-filter="zone"]').closest('fieldset').hidden = true;
+
+function renderFilterPills() {
+    filtersForm.querySelectorAll('.pills').forEach(group => {
+        const key = group.dataset.filter;
+        if (key === 'zone' && !ZONES.length) return;
+        group.innerHTML = FILTER_OPTIONS[key].map(([value, label]) => {
+            const n = plots.filter(p => matchesFilter(p, { ...draft, [key]: value })).length;
+            const active = draft[key] === value;
+            return `<button type="button" class="pill${active ? ' is-active' : ''}" data-key="${key}" data-value="${value}" aria-pressed="${active}"
+                ${n === 0 && !active ? 'disabled' : ''}>${label}<small>${n}</small></button>`;
+        }).join('');
+    });
+    const count = plots.filter(p => matchesFilter(p, draft)).length;
+    $('filters-apply').textContent = `Show ${count} plot${count === 1 ? '' : 's'}`;
+}
+
+filtersForm.addEventListener('click', (e) => {
+    const pill = e.target.closest('.pill');
+    if (!pill) return;
+    draft[pill.dataset.key] = pill.dataset.value;
+    renderFilterPills();
+});
+
+$('filter-btn').addEventListener('click', () => {
+    draft = { ...state.filter };
+    renderFilterPills();
+    filtersDialog.showModal();
+});
+$('filters-reset').addEventListener('click', () => {
+    draft = { ...DEFAULT_FILTER };
+    renderFilterPills();
+});
+filtersDialog.addEventListener('click', (e) => { if (e.target === filtersDialog) filtersDialog.close(); });
+filtersDialog.addEventListener('close', () => {
+    if (filtersDialog.returnValue !== 'apply') return;
+    setFilter(draft);
+    const n = plots.filter(p => matchesFilter(p)).length;
+    if (activeFilterCount()) toast(`${n} plot${n === 1 ? '' : 's'} match your filters`);
+});
+
+on('filter', () => {
+    const n = activeFilterCount();
+    $('filter-count').hidden = n === 0;
+    $('filter-count').textContent = n;
+    $('filter-btn').classList.toggle('is-active', n > 0);
+});
+
+// Tap the compass on the map to turn it back to north-up
+compass.addEventListener('click', () => { if (state.view === 'map') views.map?.resetNorth(); });
+
+// ─── NEARBY (lives on the map) ───────────────────────
+$('nearby-btn').addEventListener('click', async () => {
+    await showView('map');
+    views.map?.openNearby();
+    track('view_mode', { mode: 'nearby' });
+});
+
+// ─── ABOUT THE PROJECT ───────────────────────────────
+const aboutDialog = $('about-dialog');
+function renderAbout() {
+    const avail = plots.filter(p => p.status === 'Available').length;
+    $('about-body').innerHTML = `
+        <img class="about-hero" src="${gateUrl}" alt="Entrance gate of ${esc(SITE.name)}" loading="lazy">
+        <p class="muted">${esc(PROJECT.address)}</p>
+        <div class="about-facts">
+            <div><b>${plots.length}</b><span>plots</span></div>
+            <div><b>${avail}</b><span>available</span></div>
+            <div><b>${siteAreaAcres.toFixed(1)}</b><span>acres</span></div>
+        </div>
+        <p class="about-rera">RERA <b>${esc(PROJECT.rera)}</b> · <a href="https://rera.rajasthan.gov.in/" target="_blank" rel="noopener">rera.rajasthan.gov.in</a></p>
+        <h3>Amenities</h3>
+        <div class="pills about-tags">${PROJECT.amenities.map(a => `<span class="pill">${esc(a)}</span>`).join('')}</div>
+        <h3>Distances <small class="muted">from the brochure</small></h3>
+        <ul class="about-dist">${PROJECT.distances.map(([n, km]) => `<li><span>${esc(n)}</span><b>${km} km</b></li>`).join('')}</ul>
+        <h3>Brochure layout</h3>
+        <a href="${brochureUrl}" target="_blank" rel="noopener" class="about-plan"><img src="${brochureUrl}" alt="Layout plan from the brochure" loading="lazy"><span>Open full size</span></a>
+        <h3>Developer</h3>
+        <p>${esc(PROJECT.developer)}<br><span class="muted">${esc(PROJECT.office)} · Promoter RERA ${esc(PROJECT.promoterRera)}</span></p>
+        <p class="fineprint">${esc(PROJECT.source)} The map placement is matched to the satellite photo and Kotkhawada Road (SH-2); the developer's demarcation on site is final.</p>`;
+}
+$('about-btn').addEventListener('click', () => {
+    renderAbout();
+    aboutDialog.showModal();
+    track('view_mode', { mode: 'about' });
+});
+aboutDialog.querySelector('[data-close]').addEventListener('click', () => aboutDialog.close());
+aboutDialog.addEventListener('click', (e) => { if (e.target === aboutDialog) aboutDialog.close(); });
+
+// ─── BOOT ────────────────────────────────────────────
+document.body.dataset.view = 'plan';
+compass.style.transform = `rotate(${GEO.rotationDeg}deg)`;
+trackVisit();
+startLiveInventory();
+
+function openFromHash() {
+    const m = location.hash.match(/^#plot-(.+)$/);
+    const id = m && decodeURIComponent(m[1]);
+    if (id && plotById.has(id) && id !== state.selectedId) selectPlot(id, 'link');
+}
+window.addEventListener('hashchange', openFromHash);
+openFromHash();

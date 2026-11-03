@@ -7,7 +7,7 @@ import { getRepo, STATUSES, LEAD_STATUSES } from './repo.js';
 import { isPlotId, plotById, PLOTS } from './plots.js';
 import { checkPassword, startSession, endSession, isAuthed, requireAdmin } from './auth.js';
 
-const EVENTS = new Set(['visit', 'plot_view', 'enquire', 'directions']);
+const EVENTS = new Set(['visit', 'plot_view', 'enquire', 'directions', 'view_mode']);
 const query = (req) => new URL(req.url, 'http://x').searchParams;
 const plotIdOf = (v) => (v != null && isPlotId(String(v)) ? String(v) : null);
 
@@ -15,12 +15,23 @@ const health = route(['GET'], async (req, res) => {
     send(res, 200, { ok: true, ...(await getRepo().health()) });
 });
 
+// Customers see status, price and demand only — never names or numbers.
+// `units` / `hot` follow the main site's format so the shared site-plan views can read it.
 const inventory = route(['GET'], async (req, res) => {
-    const plots = await getRepo().publicInventory();
+    const repo = getRepo();
+    const [plots, demand] = await Promise.all([repo.publicInventory(), repo.plotActivity(7)]);
+    const units = plots.map(p => {
+        const area = plotById.get(p.id)?.areaSqYd;
+        return {
+            id: p.id, status: p.status, hold_until: p.holdUntil || null, price_per_sqyd: p.pricePerSqYd,
+            price_lakh: p.pricePerSqYd && area ? Math.round((p.pricePerSqYd * area) / 1000) / 100 : null,
+        };
+    });
+    const hot = Object.entries(demand).filter(([, d]) => d.people >= 3).map(([id, d]) => ({ id, people: d.people }));
     res.setHeader('Cache-Control', 'public, s-maxage=20, stale-while-revalidate=60');
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.end(JSON.stringify({ plots, updatedAt: new Date().toISOString() }));
+    res.end(JSON.stringify({ plots, units, hot, updatedAt: new Date().toISOString() }));
 });
 
 const track = route(['POST'], async (req, res) => {

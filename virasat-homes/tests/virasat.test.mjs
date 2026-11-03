@@ -135,6 +135,11 @@ async function flow(t) {
     assert.equal(byId['25'].pricePerSqYd, 14500);
     assert.equal(byId['26'].status, 'available');
     assert.ok(!('customerName' in byId['25']), 'customer details never public');
+    const unit25 = pub.json.units.find(u => u.id === '25');
+    assert.equal(unit25.price_lakh, 24.17);
+    assert.equal(unit25.price_per_sqyd, 14500);
+    assert.ok(!JSON.stringify(pub.json).includes('Asha'), 'no names in the public feed');
+    assert.equal((await api('track', { method: 'POST', body: { visitorId: vid, type: 'view_mode', mode: '3d' } })).status, 200);
 
     const hist = await api('admin/plots?history=25', { headers });
     assert.equal(hist.json.history[0].action, 'update');

@@ -2,10 +2,10 @@
 import { layout, centroid } from './geo.js';
 
 export const STATUS = {
-    available: { label: 'Available', hi: 'उपलब्ध', color: '#1e8e3e' },
-    hold: { label: 'On hold', hi: 'होल्ड', color: '#f29900' },
+    available: { label: 'Available', hi: 'उपलब्ध', color: '#34a853' },
+    hold: { label: 'On hold', hi: 'होल्ड', color: '#f9ab00' },
     booked: { label: 'Booked', hi: 'बुक', color: '#e8710a' },
-    sold: { label: 'Sold', hi: 'बिक गया', color: '#d93025' },
+    sold: { label: 'Sold', hi: 'बिक गया', color: '#9aa0a6' },
     blocked: { label: 'Not for sale', hi: 'बिक्री नहीं', color: '#80868b' },
 };
 export const STATUS_ORDER = ['available', 'hold', 'booked', 'sold', 'blocked'];

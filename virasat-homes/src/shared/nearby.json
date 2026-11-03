@@ -1,0 +1,562 @@
+{
+ "generated": "2026-11-03",
+ "attribution": "Places \u00a9 OpenStreetMap contributors \u00b7 Routing \u00a9 OSRM",
+ "gate": [
+  26.618687,
+  75.993238
+ ],
+ "approach": {
+  "road": "SH-2 (Kotkhawada Road)",
+  "lengthM": 35,
+  "path": [
+   [
+    26.618687,
+    75.993238
+   ],
+   [
+    26.618383,
+    75.993152
+   ]
+  ]
+ },
+ "categories": [
+  {
+   "id": "hospital",
+   "label": "Hospitals"
+  },
+  {
+   "id": "college",
+   "label": "Colleges"
+  },
+  {
+   "id": "mall",
+   "label": "Shopping"
+  },
+  {
+   "id": "park",
+   "label": "Parks"
+  },
+  {
+   "id": "transport",
+   "label": "Transport"
+  }
+ ],
+ "places": [
+  {
+   "name": "Shri Om Hospital, Jaipur",
+   "kind": "hospital",
+   "cat": "hospital",
+   "pos": [
+    26.602663,
+    75.948054
+   ],
+   "km": 4.8,
+   "driveKm": 5.8,
+   "driveMin": 7,
+   "route": [
+    [
+     26.61838,
+     75.99315
+    ],
+    [
+     26.6168,
+     75.99013
+    ],
+    [
+     26.60558,
+     75.9829
+    ],
+    [
+     26.60506,
+     75.98036
+    ],
+    [
+     26.60132,
+     75.97143
+    ],
+    [
+     26.59934,
+     75.96319
+    ],
+    [
+     26.59982,
+     75.95548
+    ],
+    [
+     26.59933,
+     75.95196
+    ],
+    [
+     26.59926,
+     75.94809
+    ],
+    [
+     26.60032,
+     75.94809
+    ],
+    [
+     26.60252,
+     75.94739
+    ]
+   ]
+  },
+  {
+   "name": "Gurukripa Hospital",
+   "kind": "hospital",
+   "cat": "hospital",
+   "pos": [
+    26.60453,
+    75.945754
+   ],
+   "km": 5,
+   "driveKm": 6.2,
+   "driveMin": 8
+  },
+  {
+   "name": "Government Hospital, Chaksu",
+   "kind": "hospital",
+   "cat": "hospital",
+   "pos": [
+    26.6047,
+    75.94526
+   ],
+   "km": 5,
+   "driveKm": 6.2,
+   "driveMin": 8
+  },
+  {
+   "name": "Mahatma Gandhi Medical College and Hospital",
+   "kind": "hospital",
+   "cat": "hospital",
+   "pos": [
+    26.769982,
+    75.854502
+   ],
+   "km": 21.8,
+   "driveKm": 29.9,
+   "driveMin": 34
+  },
+  {
+   "name": "Bombay Hospital",
+   "kind": "hospital",
+   "cat": "hospital",
+   "pos": [
+    26.781935,
+    75.863398
+   ],
+   "km": 22.3,
+   "driveKm": 28.8,
+   "driveMin": 35
+  },
+  {
+   "name": "JECRC University",
+   "kind": "college",
+   "cat": "college",
+   "pos": [
+    26.775672,
+    75.878738
+   ],
+   "km": 20.9,
+   "driveKm": 29.7,
+   "driveMin": 38
+  },
+  {
+   "name": "Apex Institute of Engineering and Technology",
+   "kind": "college",
+   "cat": "college",
+   "pos": [
+    26.766391,
+    75.8523
+   ],
+   "km": 21.6,
+   "driveKm": 29.7,
+   "driveMin": 34
+  },
+  {
+   "name": "Aayojan School of Architecture",
+   "kind": "college",
+   "cat": "college",
+   "pos": [
+    26.767046,
+    75.85125
+   ],
+   "km": 21.7,
+   "driveKm": 29.6,
+   "driveMin": 34
+  },
+  {
+   "name": "Swasthya kalyan institute of naturopathy and yogic sciences",
+   "kind": "college",
+   "cat": "college",
+   "pos": [
+    26.769168,
+    75.852213
+   ],
+   "km": 21.8,
+   "driveKm": 29.2,
+   "driveMin": 33
+  },
+  {
+   "name": "Swasthya kalyan Group",
+   "kind": "college",
+   "cat": "college",
+   "pos": [
+    26.76931,
+    75.851267
+   ],
+   "km": 21.9,
+   "driveKm": 29.3,
+   "driveMin": 33
+  },
+  {
+   "name": "JTM Mall Jagatpura",
+   "kind": "mall",
+   "cat": "mall",
+   "pos": [
+    26.837437,
+    75.833568
+   ],
+   "km": 29.1,
+   "driveKm": 35.8,
+   "driveMin": 46,
+   "route": [
+    [
+     26.61838,
+     75.99315
+    ],
+    [
+     26.60558,
+     75.9829
+    ],
+    [
+     26.60464,
+     75.97932
+    ],
+    [
+     26.61236,
+     75.98098
+    ],
+    [
+     26.65878,
+     75.9705
+    ],
+    [
+     26.67082,
+     75.91694
+    ],
+    [
+     26.69704,
+     75.9001
+    ],
+    [
+     26.70366,
+     75.891
+    ],
+    [
+     26.71321,
+     75.88925
+    ],
+    [
+     26.72174,
+     75.87612
+    ],
+    [
+     26.72802,
+     75.87494
+    ],
+    [
+     26.73734,
+     75.86602
+    ],
+    [
+     26.74148,
+     75.87268
+    ],
+    [
+     26.77462,
+     75.86613
+    ],
+    [
+     26.803,
+     75.85722
+    ],
+    [
+     26.82775,
+     75.84529
+    ],
+    [
+     26.83762,
+     75.83404
+    ]
+   ]
+  },
+  {
+   "name": "Dogiwal estates",
+   "kind": "park",
+   "cat": "park",
+   "pos": [
+    26.580642,
+    76.01984
+   ],
+   "km": 5,
+   "driveKm": 7.6,
+   "driveMin": 14
+  },
+  {
+   "name": "Chaksu",
+   "kind": "railway",
+   "cat": "transport",
+   "pos": [
+    26.592743,
+    75.910632
+   ],
+   "km": 8.7,
+   "driveKm": 10.5,
+   "driveMin": 15,
+   "route": [
+    [
+     26.61838,
+     75.99315
+    ],
+    [
+     26.6168,
+     75.99013
+    ],
+    [
+     26.60558,
+     75.9829
+    ],
+    [
+     26.60506,
+     75.98036
+    ],
+    [
+     26.60132,
+     75.97143
+    ],
+    [
+     26.59934,
+     75.96319
+    ],
+    [
+     26.59982,
+     75.95548
+    ],
+    [
+     26.59933,
+     75.95196
+    ],
+    [
+     26.59926,
+     75.94809
+    ],
+    [
+     26.60032,
+     75.94809
+    ],
+    [
+     26.60628,
+     75.94637
+    ],
+    [
+     26.60713,
+     75.94579
+    ],
+    [
+     26.60751,
+     75.94428
+    ],
+    [
+     26.608,
+     75.9436
+    ],
+    [
+     26.608,
+     75.94058
+    ],
+    [
+     26.60716,
+     75.9384
+    ],
+    [
+     26.60612,
+     75.93772
+    ],
+    [
+     26.60565,
+     75.93483
+    ],
+    [
+     26.60593,
+     75.93186
+    ],
+    [
+     26.60576,
+     75.92459
+    ],
+    [
+     26.59277,
+     75.9111
+    ]
+   ]
+  },
+  {
+   "name": "Shitala Road",
+   "kind": "railway",
+   "cat": "transport",
+   "pos": [
+    26.647569,
+    75.897661
+   ],
+   "km": 10,
+   "driveKm": 14.4,
+   "driveMin": 24
+  },
+  {
+   "name": "Sheodaspura Padampura",
+   "kind": "railway",
+   "cat": "transport",
+   "pos": [
+    26.709871,
+    75.884687
+   ],
+   "km": 14.8,
+   "driveKm": 20.2,
+   "driveMin": 23
+  },
+  {
+   "name": "Jaipur International Airport",
+   "kind": "airport",
+   "cat": "transport",
+   "pos": [
+    26.828094,
+    75.819108
+   ],
+   "km": 29,
+   "driveKm": 41.5,
+   "driveMin": 50,
+   "route": [
+    [
+     26.61838,
+     75.99315
+    ],
+    [
+     26.60558,
+     75.9829
+    ],
+    [
+     26.60464,
+     75.97932
+    ],
+    [
+     26.61236,
+     75.98098
+    ],
+    [
+     26.65979,
+     75.9694
+    ],
+    [
+     26.6693,
+     75.92039
+    ],
+    [
+     26.67257,
+     75.91497
+    ],
+    [
+     26.69688,
+     75.90022
+    ],
+    [
+     26.70366,
+     75.891
+    ],
+    [
+     26.71321,
+     75.88925
+    ],
+    [
+     26.72174,
+     75.87612
+    ],
+    [
+     26.72851,
+     75.87459
+    ],
+    [
+     26.7731,
+     75.83137
+    ],
+    [
+     26.81983,
+     75.79617
+    ],
+    [
+     26.84112,
+     75.79368
+    ],
+    [
+     26.83909,
+     75.79396
+    ],
+    [
+     26.83924,
+     75.79812
+    ],
+    [
+     26.84181,
+     75.80202
+    ],
+    [
+     26.83331,
+     75.80448
+    ],
+    [
+     26.83313,
+     75.81595
+    ],
+    [
+     26.82809,
+     75.81918
+    ]
+   ]
+  },
+  {
+   "name": "Jaipur Junction",
+   "kind": "railway",
+   "cat": "transport",
+   "pos": [
+    26.920789,
+    75.786654
+   ],
+   "km": 39.4,
+   "driveKm": 46.3,
+   "driveMin": 58
+  }
+ ],
+ "roads": [
+  {
+   "name": "Kotkhawada Road (SH-2)",
+   "type": "primary",
+   "pos": [
+    26.618383,
+    75.993152
+   ],
+   "km": 0,
+   "driveKm": 0,
+   "driveMin": 1
+  },
+  {
+   "name": "Jaipur Outer Ring Road",
+   "type": "motorway",
+   "pos": [
+    26.732815,
+    75.893669
+   ],
+   "km": 16.1,
+   "driveKm": 29.8,
+   "driveMin": 39
+  }
+ ]
+}

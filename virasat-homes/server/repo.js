@@ -173,7 +173,7 @@ export function pgRepo(sql) {
         },
         async publicInventory() {
             const plots = await listPlots();
-            return plots.map(p => ({ id: p.id, status: p.status, pricePerSqYd: p.pricePerSqYd }));
+            return plots.map(p => ({ id: p.id, status: p.status, pricePerSqYd: p.pricePerSqYd, holdUntil: p.status === 'hold' ? p.holdUntil : null }));
         },
         async recordVisit(visitorId, { isMobile, referrer, utmSource }) {
             await migrate();
@@ -302,7 +302,7 @@ export function memoryRepo() {
     return {
         kind: 'memory',
         async health() { return { db: 'memory', plots: plots.size }; },
-        async publicInventory() { return (await listPlots()).map(p => ({ id: p.id, status: p.status, pricePerSqYd: p.pricePerSqYd })); },
+        async publicInventory() { return (await listPlots()).map(p => ({ id: p.id, status: p.status, pricePerSqYd: p.pricePerSqYd, holdUntil: p.status === 'hold' ? p.holdUntil : null })); },
         async recordVisit(visitorId, { isMobile, referrer, utmSource }) {
             const v = visitors.get(visitorId) || { id: visitorId, visits: 0, isMobile: !!isMobile, source: sourceOf(referrer, utmSource) };
             v.visits++;

@@ -4,7 +4,7 @@ Everything for this project lives in this folder. It deploys with the rest of th
 
 | URL | Who | What |
 | --- | --- | --- |
-| `/virasat-homes/` | Customers | Satellite map with every plot in its real place, 2D plan, brochure layout, live availability, plot details, call-back request |
+| `/virasat-homes/` | Customers | Same experience as the main site plan: 2D plan, 3D model with walk-through, satellite map (rotate, overlay strength, nearby places with drive times), filters, search, plot card with price / size / possible house layout unlocked by sharing a number, enquiry, directions, share, live stock + demand badges, broker links (`?cp=`), plus an About panel (RERA, amenities, brochure distances and layout) |
 | `/virasat-homes/admin/` | Builder | Sign in, overview, plot stock (status / price / customer / hold), customer enquiries, Excel (CSV) export |
 | `/api/virasat/*` | Both | Served by the single Vercel function (`server/router.js` forwards to `server/handler.js` here) |
 
@@ -14,12 +14,16 @@ Everything for this project lives in this folder. It deploys with the rest of th
 index.html, admin/index.html   page shells (Vite entries)
 data/layout.json               238 plots, boundary, open areas, road labels, map placement, project facts
 assets/                        brochure layout image, gate photo
-src/shared/                    geo (plan → lat/lng), plot list + status colours, SVG plan view
-src/customer/                  customer site (Leaflet map, sheet, enquiry form)
+src/shared/site.js             Virasat data in the main site's shape (features, plots, GEO) for the shared views
+src/shared/                    geo (plan → lat/lng), nearby.json (OSM places + OSRM drive times), admin plan view;
+                               status / house-layout / geo3d / place-kinds re-export the main site's generic helpers
+src/customer/                  customer site: the main site's plan / 3D / walk / map / nearby / sheet modules, adapted
+                               (tilted roads, south gate on SH-2, gaj pricing, project endpoints)
 src/admin/                     admin panel
 server/                        API: handler (routes), repo (Neon Postgres or in-memory), auth, plots
 tests/                         data checks + API flow on in-memory store and real Postgres SQL (PGlite)
-tools/                         how data/layout.json was made from the brochure (Python + macOS Vision OCR)
+tools/                         how data/layout.json was made from the brochure (Python + macOS Vision OCR), roads.py,
+                               fetch-nearby.mjs (rebuilds src/shared/nearby.json)
 ```
 
 ## Data

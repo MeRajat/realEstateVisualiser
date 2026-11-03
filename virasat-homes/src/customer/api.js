@@ -1,0 +1,84 @@
+// Visitor analytics + lead submission. Analytics failures are silent by design.
+const VID_KEY = 'vh_vid';
+
+function makeId() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    return Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+}
+
+export const visitorId = (() => {
+    try {
+        let id = localStorage.getItem(VID_KEY);
+        if (!id) { id = makeId(); localStorage.setItem(VID_KEY, id); }
+        return id;
+    } catch {
+        return makeId();
+    }
+})();
+
+function post(url, body) {
+    return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        keepalive: true,
+    });
+}
+
+// A broker shares links like ?cp=Rakesh so every lead from that link is credited to them
+export const channelPartner = (() => {
+    try {
+        const fromUrl = new URLSearchParams(location.search).get('cp');
+        if (fromUrl) { localStorage.setItem('vh_cp', fromUrl.slice(0, 40)); return fromUrl.slice(0, 40); }
+        return localStorage.getItem('vh_cp') || null;
+    } catch { return null; }
+})();
+
+// Campaign tags from ad links (utm_* / fbclid) stick for the visit so leads are credited to the campaign
+export const campaign = (() => {
+    try {
+        const q = new URLSearchParams(location.search);
+        const fresh = { utmSource: q.get('utm_source'), utmCampaign: q.get('utm_campaign'), utmContent: q.get('utm_content') || q.get('utm_medium'), fbclid: q.get('fbclid') ? 1 : null };
+        if (Object.values(fresh).some(Boolean)) { sessionStorage.setItem('vh_utm', JSON.stringify(fresh)); return fresh; }
+        return JSON.parse(sessionStorage.getItem('vh_utm')) || {};
+    } catch { return {}; }
+})();
+
+export function track(type, extra = {}) {
+    post('/api/virasat/track', { visitorId, type, ...extra }).catch(() => {});
+}
+
+// One "visit" per browser session
+export function trackVisit() {
+    try {
+        if (sessionStorage.getItem('vh_visit')) return;
+        sessionStorage.setItem('vh_visit', '1');
+    } catch { /* ignore */ }
+    track('visit', { referrer: document.referrer || null, cp: channelPartner, ...campaign });
+}
+
+let lastViewed = null;
+export function trackPlotView(plotId) {
+    if (plotId === lastViewed) return;
+    lastViewed = plotId;
+    track('plot_view', { plotId });
+}
+
+// Validation problems (4xx) are shown to the customer. Server/network failures are not their
+// problem: never block them from seeing details — log it so the builder can spot a broken backend.
+export async function submitLead({ name, phone, plotId, website }) {
+    let res;
+    try {
+        res = await post('/api/virasat/lead', { visitorId, name, phone, plotId, website, cp: channelPartner });
+    } catch (err) {
+        console.error('[lead] network error, lead not saved', err);
+        return { ok: false, saved: false };
+    }
+    const data = await res.json().catch(() => ({}));
+    if (res.status >= 500) {
+        console.error('[lead] server error, lead not saved', res.status, data.error);
+        return { ok: false, saved: false };
+    }
+    if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+    return data;
+}

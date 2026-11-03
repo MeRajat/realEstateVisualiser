@@ -1,0 +1,156 @@
+// Plot detail sheet content (bottom sheet on mobile, side panel on desktop).
+import { plots, formatPrice, ZONES } from '../shared/site.js';
+import { STATUS_LABEL } from '../shared/status.js';
+import { SIZE_BUCKETS } from './store.js';
+import { generateHouseLayout } from '../shared/house-layout.js';
+import { renderHousePlan } from './houseplan.js';
+
+const layoutCache = new Map();
+export function houseLayoutFor(p) {
+    if (!layoutCache.has(p.id)) layoutCache.set(p.id, generateHouseLayout(p));
+    return layoutCache.get(p.id);
+}
+
+export function renderLayoutFloor(p, floorId) {
+    const layout = houseLayoutFor(p);
+    return renderHousePlan(layout, floorId, { roadName: layout.roadName });
+}
+
+function layoutBlock(p) {
+    if (!p.dims) return '';
+    const L = houseLayoutFor(p);
+    return `<section class="layout-block">
+        <div class="layout-head">
+            <h3>Possible house on this plot</h3>
+            <span class="layout-badge">${L.bedrooms} BHK duplex</span>
+        </div>
+        <p class="layout-sum">≈ ${fmt(L.builtUp)} sq.ft built-up on 2 floors · setbacks ${L.setbacks.front}' front, ${L.setbacks.rear}' rear</p>
+        <div class="layout-tabs" role="tablist">
+            <button type="button" role="tab" class="is-active" aria-selected="true" data-action="layout-floor" data-floor="ground">Ground floor</button>
+            <button type="button" role="tab" aria-selected="false" data-action="layout-floor" data-floor="first">First floor</button>
+        </div>
+        <div class="layout-sheet">${renderLayoutFloor(p, 'ground')}</div>
+        <ul class="vastu">${L.vastu.map(v => `<li class="${v.ok ? 'ok' : ''}">${v.ok ? '✓' : '•'} ${esc(v.text)}</li>`).join('')}</ul>
+        <button type="button" class="btn-ghost block" data-action="house-3d">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m12 3 9 5v8l-9 5-9-5V8zM12 13l9-5M12 13 3 8M12 13v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+            See this house in 3D</button>
+        <p class="fineprint">Indicative layout for illustration. Final design and approvals as per JDA / local building rules with your architect.</p>
+    </section>`;
+}
+
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (n) => n.toLocaleString('en-IN');
+
+// Plots here are priced per sq yd (gaj)
+function pricePerSqYd(p) {
+    if (p.pricePerSqYd) return Math.round(p.pricePerSqYd);
+    if (!p.priceLakh || !p.areaSqYd) return null;
+    return Math.round((p.priceLakh * 100000) / p.areaSqYd);
+}
+
+// Nearest available plots of a similar size — offered when a plot is sold
+export function similarPlots(plot, n = 3) {
+    const bucket = SIZE_BUCKETS.find(b => b.test(plot.areaSqFt));
+    return plots
+        .filter(p => p.status === 'Available' && p.id !== plot.id && (!bucket || bucket.test(p.areaSqFt)))
+        .map(p => ({ p, d: Math.hypot(p.center[0] - plot.center[0], p.center[1] - plot.center[1]) }))
+        .sort((a, b) => a.d - b.d)
+        .slice(0, n)
+        .map(x => x.p);
+}
+
+function diagram(p) {
+    if (!p.dims) return '';
+    const { w, h } = p.dims;
+    const dirs = new Map(p.facing.map(f => [f.dir, f.road]));
+    const maxW = 200, maxH = 120;
+    const k = Math.min(maxW / w, maxH / h);
+    const rW = Math.max(80, w * k), rH = Math.max(50, h * k);
+    const pL = 44, pT = 34, pR = 44, pB = 30;
+    const W = rW + pL + pR, H = rH + pT + pB;
+    const road = (dir) => {
+        if (!dirs.has(dir)) return '';
+        const name = esc(dirs.get(dir));
+        if (dir === 'North') return `<rect x="${pL}" y="4" width="${rW}" height="14" rx="3" class="dg-road"/><text x="${pL + rW / 2}" y="11" class="dg-road-t">${name}</text>`;
+        if (dir === 'South') return `<rect x="${pL}" y="${pT + rH + 12}" width="${rW}" height="14" rx="3" class="dg-road"/><text x="${pL + rW / 2}" y="${pT + rH + 19}" class="dg-road-t">${name}</text>`;
+        const x = dir === 'West' ? 4 : pL + rW + 26;
+        return `<rect x="${x}" y="${pT}" width="14" height="${rH}" rx="3" class="dg-road"/><text x="${x + 7}" y="${pT + rH / 2}" class="dg-road-t" transform="rotate(-90 ${x + 7} ${pT + rH / 2})">${name}</text>`;
+    };
+    return `<svg viewBox="0 0 ${W} ${H}" class="plot-diagram" role="img" aria-label="Plot ${esc(p.id)}: ${w} by ${h} feet">
+        ${road('North')}${road('South')}${road('West')}${road('East')}
+        <rect x="${pL}" y="${pT}" width="${rW}" height="${rH}" rx="3" class="dg-plot"/>
+        <line x1="${pL}" y1="${pT - 8}" x2="${pL + rW}" y2="${pT - 8}" class="dg-dim"/>
+        <text x="${pL + rW / 2}" y="${pT - 11}" class="dg-dim-t">${w} ft</text>
+        <line x1="${pL - 8}" y1="${pT}" x2="${pL - 8}" y2="${pT + rH}" class="dg-dim"/>
+        <text x="${pL - 11}" y="${pT + rH / 2}" class="dg-dim-t" transform="rotate(-90 ${pL - 11} ${pT + rH / 2})">${h} ft</text>
+        <text x="${pL + rW / 2}" y="${pT + rH / 2}" class="dg-id">${esc(p.id)}</text>
+        <text x="${pL + rW - 8}" y="${pT + 14}" class="dg-north">N ↑</text>
+    </svg>`;
+}
+
+export function renderSheet(p, { unlocked }) {
+    const zone = ZONES.find(z => z.id === p.zone);
+    const facing = p.facing.length ? p.facing.map(f => f.dir).join(' & ') : '—';
+    const ppsy = pricePerSqYd(p);
+    const sold = p.status !== 'Available';
+    const onHold = p.status === 'Hold';
+    const hot = p.hot && p.status === 'Available';
+
+    const head = `
+        <div class="sheet-head">
+            <div class="pills-row">
+                <span class="status-pill st-${esc(p.status)}">${esc(STATUS_LABEL.en[p.status] || p.status)}</span>
+                ${hot ? `<span class="hot-pill">🔥 ${p.hot.people >= 3 ? `${p.hot.people} people asked this week` : 'In demand'}</span>` : ''}
+                ${zone ? `<span class="zone-pill" style="--zc:${zone.color}">${zone.name}</span>` : ''}
+                ${p.facing.length > 1 ? '<span class="zone-pill corner">Corner plot</span>' : ''}
+            </div>
+            <h2>Plot ${esc(p.id)}</h2>
+        </div>
+        <div class="facts">
+            <div><span>Area</span><b>${fmt(p.areaSqFt)} <small>sq.ft</small></b></div>
+            <div><span>In Gaj</span><b>${p.gaj}</b></div>
+            <div><span>Facing</span><b>${facing}</b></div>
+        </div>`;
+
+    const details = unlocked
+        ? `<div class="price-card">
+                <div><span>Price</span><b>${esc(formatPrice(p))}</b></div>
+                ${ppsy ? `<div><span>Rate</span><b>₹${fmt(ppsy)}<small>/gaj</small></b></div>` : ''}
+                ${p.dims ? `<div><span>Size</span><b>${p.dims.exact ? '' : '≈ '}${p.dims.w} × ${p.dims.h}<small> ft</small></b></div>` : ''}
+           </div>
+           ${diagram(p)}
+           ${layoutBlock(p)}`
+        : `<div class="locked">
+                <div class="locked-preview" aria-hidden="true">
+                    <div><span>Price</span><b>₹ •• Lakhs</b></div>
+                    <div><span>Rate</span><b>₹ ••,••• /gaj</b></div>
+                    <div><span>Size</span><b>•• × •• ft</b></div>
+                </div>
+                <button type="button" class="btn-primary block" data-action="unlock">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                    See price, size &amp; layout
+                </button>
+           </div>`;
+
+    const alternatives = sold
+        ? `<div class="similar">
+                ${onHold ? `<p class="hold-note">Someone has put this plot on hold for a short time. If it frees up we can tell you — tap <b>Enquire</b>.</p>` : ''}
+                <p>${onHold ? 'Meanwhile, similar' : `This plot is ${(STATUS_LABEL.en[p.status] || p.status).toLowerCase()}. Similar`} plots still available nearby:</p>
+                <div class="similar-list">${similarPlots(p).map(s =>
+                    `<button type="button" data-action="goto" data-id="${esc(s.id)}"><b>Plot ${esc(s.id)}</b><span>${fmt(s.areaSqFt)} sq.ft${s.facing[0] ? ' · ' + s.facing[0].dir : ''}</span></button>`
+                ).join('')}</div>
+           </div>`
+        : '';
+
+    const actions = `
+        <div class="sheet-actions">
+            ${sold && !onHold ? '' : `<button type="button" class="btn-primary" data-action="enquire">${onHold ? 'Tell me if it frees up' : 'Enquire about this plot'}</button>`}
+            <a class="btn-ghost" data-action="directions" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M3 11 22 2l-9 19-2-8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Directions</a>
+            <button type="button" class="btn-ghost" data-action="share">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" stroke="currentColor" stroke-width="2"/></svg>Share</button>
+        </div>`;
+
+    // A sold plot's price isn't useful (and shouldn't be a reason to ask for a number)
+    return head + alternatives + (sold ? '' : details) + actions;
+}
