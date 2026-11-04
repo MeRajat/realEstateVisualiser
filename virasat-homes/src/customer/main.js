@@ -14,6 +14,11 @@ import { startLiveInventory } from './live.js';
 
 const $ = (id) => document.getElementById(id);
 
+// Full-screen app on phones: pinching the toolbar or a sheet must not zoom the whole page (iOS ignores
+// user-scalable=no). The plan, 3D view and map handle their own pinch through touch events.
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('dblclick', (e) => { if (!e.target.closest('input, textarea')) e.preventDefault(); }, { passive: false });
+
 // ─── STATIC CONTENT ──────────────────────────────────
 $('site-name').textContent = SITE.name;
 $('site-tagline').textContent = SITE.tagline;

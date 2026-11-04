@@ -2,6 +2,7 @@
 import L from './leaflet-global.js';
 import 'leaflet-rotate';
 import 'leaflet/dist/leaflet.css';
+import { smoothPinch } from '../shared/smooth-pinch.js';
 import { features, boundary, toLatLng, ZONES, STATUS_COLORS } from '../shared/site.js';
 import { state, on, selectPlot, matchesFilter } from './store.js';
 import { getInsets } from './layout.js';
@@ -16,10 +17,12 @@ export function createMapView(el, { opacitySlider, compass } = {}) {
         rotate: true, touchRotate: true, shiftKeyRotate: true, rotateControl: false, bearing: 0,
     });
     map.attributionControl.setPrefix(false);
+    smoothPinch(L, map); // steady pinch-zoom: rotation only after a deliberate twist
 
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 20,
         maxNativeZoom: 18, // Esri has no z19 imagery for this area — upscale z18 instead
+        updateWhenZooming: false, // no tile reloads on every pinch step (smoother on phones)
         attribution: 'Imagery © Esri',
     }).addTo(map);
 

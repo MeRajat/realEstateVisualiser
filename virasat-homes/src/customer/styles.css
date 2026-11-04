@@ -637,3 +637,6 @@ body.is-walking #view-controls, body.is-walking #legend { display: none; }
 .about-plan { display: block; position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
 .about-plan img { display: block; width: 100%; height: 220px; object-fit: cover; object-position: center 35%; }
 .about-plan span { position: absolute; right: 8px; bottom: 8px; background: rgba(32,33,36,.8); color: #fff; font-size: 12px; padding: 4px 10px; border-radius: 999px; }
+
+/* No double-tap page zoom on buttons / sheets (views keep their own touch-action: none) */
+html { touch-action: manipulation; }

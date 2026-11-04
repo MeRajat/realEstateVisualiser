@@ -618,3 +618,6 @@ body.is-walking #view-controls, body.is-walking #legend { display: none; }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
+
+/* No double-tap page zoom on buttons / sheets (views keep their own touch-action: none) */
+html { touch-action: manipulation; }
