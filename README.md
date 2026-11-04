@@ -100,6 +100,10 @@ server/                  API handlers (one file per endpoint, same names as the 
   lib/                   db (Neon or in-memory), units / marketing / crm repos, inventory rules, insights, ai, wa-bot, push, auth, http helpers
 ```
 
+## Adding another builder's site
+
+Follow `plans/CustomerSitePlaybook.md` (what to ask the builder for, digitising the brochure layout, placing it on the map, reusing the site-plan modules, testing on phones and on the live deploy). `virasat-homes/` is the worked example; in Claude Code the `new-customer-site` skill runs the same steps.
+
 ## Updating plots
 
 Edit `src/shared/plots_data.json` (status, price, area) and redeploy. Polygons are in plan units (1 unit = 1 ft).

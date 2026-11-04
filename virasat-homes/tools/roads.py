@@ -2,7 +2,8 @@
 # longest run through the road mask, walk to both ends, measure the width. Output in plan feet.
 import json, math, re, numpy as np, cv2
 PXFT=5.466
-lay=json.load(open('/Users/rajat/workspace/quickIdeas/realEstateVisualiser/virasat-homes/data/layout.json'))
+import os
+lay=json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'layout.json')))
 H,W=9506,6236
 B=np.array(lay['boundary'])*PXFT
 inside=np.zeros((H,W),np.uint8); cv2.fillPoly(inside,[np.round(B).astype(np.int32)],1)
